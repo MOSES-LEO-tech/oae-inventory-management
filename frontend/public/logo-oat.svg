@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" fill="none">
+  <defs>
+    <linearGradient id="ringGrad" x1="0" y1="0" x2="400" y2="400" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#3B7A57"/>
+      <stop offset="50%" stop-color="#2D5F4A"/>
+      <stop offset="100%" stop-color="#1E4D3A"/>
+    </linearGradient>
+    <linearGradient id="letterGrad" x1="100" y1="100" x2="300" y2="300" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#2D5F4A"/>
+      <stop offset="100%" stop-color="#1E4D3A"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Outer circle ring (the "O") -->
+  <circle cx="200" cy="180" r="140" stroke="url(#ringGrad)" stroke-width="28" fill="none"/>
+
+  <!-- Inner letters "AE" overlapping, centered inside the circle -->
+  <g fill="url(#letterGrad)">
+    <!-- Letter A -->
+    <path d="M 145 250 L 185 120 L 195 120 L 200 145 L 235 120 L 250 118 L 205 255 L 200 255 L 198 250 Z M 192 210 L 208 210 L 200 170 Z"/>
+
+    <!-- Letter E -->
+    <path d="M 230 120 L 290 120 L 290 138 L 250 138 L 250 180 L 275 180 L 275 198 L 250 198 L 250 235 L 292 235 L 292 255 L 230 255 L 230 120 Z"/>
+  </g>
+
+  <!-- Company name text below -->
+  <text x="200" y="365" text-anchor="middle" fill="#2D5F4A" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="700" letter-spacing="2">OFFICE AUTOMATION</text>
+  <text x="200" y="390" text-anchor="middle" fill="#2D5F4A" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="700" letter-spacing="2">&amp; EQUIPMENT LIMITED</text>
+</svg>

@@ -1,0 +1,17 @@
+{
+  "name": "OAE Inventory & Sales Management",
+  "short_name": "OAE Inventory",
+  "description": "Stationery inventory and sales management system",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/logo-oat.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

@@ -1,0 +1,184 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  /* ── Fonts (preserved: Geist) ─────────────────────────── */
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --font-heading: var(--font-geist-sans);
+  --font-geist: var(--font-geist-sans);
+
+  /* ── Brand named colors (military green + white) ──────── */
+  --color-military: var(--military);
+  --color-military-light: var(--military-light);
+  --color-canvas: var(--canvas);
+  --color-paper: var(--paper);
+  --color-surface-alt: var(--surface-alt);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-mid-gray: var(--mid-gray);
+  --color-hairline: var(--hairline);
+  --color-ember: var(--ember);
+
+  /* ── shadcn semantic tokens ───────────────────────────── */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+
+  /* ── Border radius (18px interactive / 24px containers) ── */
+  --radius-sm: 6px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+  --radius-xl: 14px;
+  --radius-2xl: 18px;
+  --radius-3xl: 24px;
+  --radius-4xl: 24px;
+
+  /* ── Shadows (whisper-quiet elevation) ────────────────── */
+  --shadow-subtle: oklab(0.145 -0.00000143796 0.00000340492 / 0.05) 0px 0px 0px 1px,
+    rgba(0, 0, 0, 0.1) 0px 1px 3px 0px, rgba(0, 0, 0, 0.1) 0px 1px 2px -1px;
+  --shadow-subtle-2: lab(2.75381 0 0) 0px 0px 0px 0px;
+
+  /* ── DESIGN.md type scale ─────────────────────────────── */
+  --text-caption: 12px;
+  --leading-caption: 1.33;
+  --tracking-caption: 0.6px;
+  --text-body: 14px;
+  --leading-body: 1.43;
+  --text-body-lg: 16px;
+  --leading-body-lg: 1.5;
+  --text-subheading: 18px;
+  --leading-subheading: 1.56;
+  --text-heading-sm: 24px;
+  --leading-heading-sm: 1.33;
+  --tracking-heading-sm: -0.6px;
+  --text-heading: 30px;
+  --leading-heading: 1.2;
+  --tracking-heading: -0.75px;
+  --text-heading-lg: 36px;
+  --leading-heading-lg: 1.11;
+  --tracking-heading-lg: -0.9px;
+  --text-display: 48px;
+  --leading-display: 1.1;
+  --tracking-display: -2.4px;
+}
+
+/* ── Light: military green + white ──────────────────────── */
+:root {
+  --military: #42a10b;
+  --military-light: #57C41E;
+  --canvas: #F5F6F2;
+  --paper: #ffffff;
+  --surface-alt: #EBEDE7;
+  --ink: #1A1C19;
+  --ink-soft: #2D302B;
+  --mid-gray: #6B6E68;
+  --hairline: #DEE0DA;
+  --ember: #CC1100;
+
+  --background: var(--canvas);
+  --foreground: var(--ink);
+  --card: var(--paper);
+  --card-foreground: var(--ink);
+  --popover: var(--paper);
+  --popover-foreground: var(--ink);
+  --primary: var(--military);
+  --primary-foreground: #ffffff;
+  --secondary: var(--canvas);
+  --secondary-foreground: var(--ink);
+  --muted: var(--canvas);
+  --muted-foreground: var(--mid-gray);
+  --accent: var(--surface-alt);
+  --accent-foreground: var(--ink);
+  --destructive: var(--ember);
+  --border: var(--hairline);
+  --input: var(--hairline);
+  --ring: var(--military);
+  --sidebar: var(--surface-alt);
+  --sidebar-foreground: var(--ink);
+  --sidebar-primary: var(--military);
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: var(--canvas);
+  --sidebar-accent-foreground: var(--ink);
+  --sidebar-border: var(--hairline);
+  --sidebar-ring: var(--military);
+}
+
+/* ── Dark (military green + dark base) ──────────────────── */
+.dark {
+  --military: #42a10b;
+  --military-light: #57C41E;
+  --canvas: #1A1C19;
+  --paper: #222422;
+  --surface-alt: #1E201D;
+  --ink: #EEEFEC;
+  --ink-soft: #D4D6D1;
+  --mid-gray: #9B9C98;
+  --hairline: #3A3C37;
+  --ember: #FF5B4D;
+
+  --background: var(--canvas);
+  --foreground: var(--ink);
+  --card: var(--paper);
+  --card-foreground: var(--ink);
+  --popover: var(--paper);
+  --popover-foreground: var(--ink);
+  --primary: var(--military);
+  --primary-foreground: #ffffff;
+  --secondary: #2A2C28;
+  --secondary-foreground: var(--ink);
+  --muted: #2A2C28;
+  --muted-foreground: var(--mid-gray);
+  --accent: #2A2C28;
+  --accent-foreground: var(--ink);
+  --destructive: var(--ember);
+  --border: var(--hairline);
+  --input: var(--hairline);
+  --ring: var(--military);
+  --sidebar: var(--surface-alt);
+  --sidebar-foreground: var(--ink);
+  --sidebar-primary: var(--military);
+  --sidebar-primary-foreground: #1A1C19;
+  --sidebar-accent: #2A2C28;
+  --sidebar-accent-foreground: var(--ink);
+  --sidebar-border: var(--hairline);
+  --sidebar-ring: var(--military);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
+}
