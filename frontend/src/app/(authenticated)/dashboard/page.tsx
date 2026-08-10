@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
 import {
   Table,
   TableBody,
@@ -113,16 +114,20 @@ function AdminDashboard() {
       </div>
 
       {/* Stats Grid — stat block: caption label over semibold value */}
+      <div className="flex items-center gap-3 pt-2">
+        <h2 className="text-caption font-medium uppercase tracking-caption text-mid-gray">Overview</h2>
+        <div className="flex-1 border-t border-hairline" />
+      </div>
       <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
         {stats.map((stat) => (
-          <Card key={stat.title} className="transition-shadow hover:shadow-subtle-2">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-caption font-medium uppercase tracking-caption text-mid-gray">{stat.title}</CardTitle>
-              <stat.icon className="h-4 w-4 text-mid-gray" />
+          <Card key={stat.title} className="min-w-0 transition-shadow hover:shadow-subtle-2">
+            <CardHeader className="flex min-h-14 flex-row items-start justify-between gap-2 pb-2">
+              <CardTitle className="min-w-0 text-caption font-medium uppercase leading-tight tracking-caption text-mid-gray">{stat.title}</CardTitle>
+              <stat.icon className="mt-0.5 h-4 w-4 shrink-0 text-mid-gray" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-semibold tracking-tight">{stat.value}</div>
-              <p className="mt-1 text-xs text-mid-gray">{stat.desc}</p>
+            <CardContent className="min-w-0 pt-0">
+              <div className="tabular-nums whitespace-nowrap text-xl font-semibold tracking-tight sm:text-2xl">{stat.value}</div>
+              <p className="mt-1 min-h-8 text-xs leading-4 text-mid-gray">{stat.desc}</p>
             </CardContent>
           </Card>
         ))}
@@ -138,16 +143,15 @@ function AdminDashboard() {
         </CardHeader>
         <CardContent className="p-0">
           {recentMovements.length === 0 ? (
-            <div className="p-6 text-center text-muted-foreground">
-              <Clock className="mx-auto mb-2 h-8 w-8" />
-              <p>No recent activity.</p>
-            </div>
+            <EmptyState
+              icon={<Clock className="h-10 w-10" />}
+              title="No recent activity"
+            />
           ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Date/Time</TableHead>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Date/Time</TableHead>
                     <TableHead>Item</TableHead>
                     <TableHead>Type</TableHead>
                     <TableHead className="hidden sm:table-cell">Store</TableHead>
@@ -176,12 +180,15 @@ function AdminDashboard() {
                   ))}
                 </TableBody>
               </Table>
-            </div>
           )}
         </CardContent>
       </Card>
 
       {/* Quick Links */}
+      <div className="flex items-center gap-3 pt-4">
+        <h2 className="text-caption font-medium uppercase tracking-caption text-mid-gray">Quick Actions</h2>
+        <div className="flex-1 border-t border-hairline" />
+      </div>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {[
           { href: "/stock-in", label: "Record Stock In", icon: ArrowDownToLine, desc: "Add incoming stock" },
@@ -268,16 +275,20 @@ function ManagerDashboard() {
       </Card>
 
       {/* Stats */}
+      <div className="flex items-center gap-3 pt-2">
+        <h2 className="text-caption font-medium uppercase tracking-caption text-mid-gray">Store Stats</h2>
+        <div className="flex-1 border-t border-hairline" />
+      </div>
       <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
         {stats.map((stat) => (
-          <Card key={stat.title} className="transition-shadow hover:shadow-subtle-2">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-caption font-medium uppercase tracking-caption text-mid-gray">{stat.title}</CardTitle>
-              <stat.icon className="h-4 w-4 text-mid-gray" />
+          <Card key={stat.title} className="min-w-0">
+            <CardHeader className="flex min-h-14 flex-row items-start justify-between gap-2 pb-2">
+              <CardTitle className="min-w-0 text-caption font-medium uppercase leading-tight tracking-caption text-mid-gray">{stat.title}</CardTitle>
+              <stat.icon className="mt-0.5 h-4 w-4 shrink-0 text-mid-gray" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-semibold tracking-tight">{stat.value}</div>
-              <p className="mt-1 text-xs text-mid-gray">{stat.desc}</p>
+            <CardContent className="min-w-0 pt-0">
+              <div className="tabular-nums whitespace-nowrap text-xl font-semibold tracking-tight sm:text-2xl">{stat.value}</div>
+              <p className="mt-1 min-h-8 text-xs leading-4 text-mid-gray">{stat.desc}</p>
             </CardContent>
           </Card>
         ))}
@@ -325,11 +336,10 @@ function ManagerDashboard() {
             {storeMovements.length === 0 ? (
               <div className="p-6 text-center text-muted-foreground">No recent activity in this store.</div>
             ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Time</TableHead>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Time</TableHead>
                       <TableHead>Item</TableHead>
                       <TableHead>Type</TableHead>
                       <TableHead>Qty</TableHead>
@@ -352,7 +362,6 @@ function ManagerDashboard() {
                     ))}
                   </TableBody>
                 </Table>
-              </div>
             )}
           </CardContent>
         </Card>
@@ -469,7 +478,7 @@ function ClerkDashboard() {
             <DollarSign className="h-5 w-5 text-mid-gray" />
             <div>
               <p className="text-caption font-medium uppercase tracking-caption text-mid-gray">Today&apos;s Sales</p>
-              <p className="text-xl font-semibold tracking-tight">{formatCurrency(totalRevenue)}</p>
+              <p className="tabular-nums text-xl font-semibold tracking-tight">{formatCurrency(totalRevenue)}</p>
             </div>
           </CardContent>
         </Card>
@@ -478,7 +487,7 @@ function ClerkDashboard() {
             <ShoppingBag className="h-5 w-5 text-mid-gray" />
             <div>
               <p className="text-caption font-medium uppercase tracking-caption text-mid-gray">Items Sold</p>
-              <p className="text-xl font-semibold tracking-tight">{totalItemsSold}</p>
+              <p className="tabular-nums text-xl font-semibold tracking-tight">{totalItemsSold}</p>
             </div>
           </CardContent>
         </Card>
@@ -487,7 +496,7 @@ function ClerkDashboard() {
             <TrendingUp className="h-5 w-5 text-mid-gray" />
             <div>
               <p className="text-caption font-medium uppercase tracking-caption text-mid-gray">Sales Count</p>
-              <p className="text-xl font-semibold tracking-tight">{myTodaySales.length}</p>
+              <p className="tabular-nums text-xl font-semibold tracking-tight">{myTodaySales.length}</p>
             </div>
           </CardContent>
         </Card>
@@ -500,12 +509,11 @@ function ClerkDashboard() {
             <CardTitle className="text-sm">Top Items Sold Today</CardTitle>
           </CardHeader>
           <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Item</TableHead>
-                    <TableHead className="text-right">Qty Sold</TableHead>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Item</TableHead>
+                  <TableHead className="text-right">Qty Sold</TableHead>
                     <TableHead className="text-right">Revenue</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -513,13 +521,12 @@ function ClerkDashboard() {
                   {topItems.map((item) => (
                     <TableRow key={item.name}>
                       <TableCell className="text-sm font-medium">{item.name}</TableCell>
-                      <TableCell className="text-right text-sm">{item.qtyPc}PC</TableCell>
-                      <TableCell className="text-right text-sm font-medium">{formatCurrency(item.revenue)}</TableCell>
+                      <TableCell className="tabular-nums text-right text-sm">{item.qtyPc}PC</TableCell>
+                      <TableCell className="tabular-nums text-right text-sm font-medium">{formatCurrency(item.revenue)}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
-              </Table>
-            </div>
+            </Table>
           </CardContent>
         </Card>
       )}
@@ -539,12 +546,11 @@ function ClerkDashboard() {
               <p>No sales recorded yet.</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Items</TableHead>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Items</TableHead>
                     <TableHead className="text-right">Qty</TableHead>
                     <TableHead className="text-right">Total</TableHead>
                   </TableRow>
@@ -558,13 +564,12 @@ function ClerkDashboard() {
                         })}
                       </TableCell>
                       <TableCell className="text-sm">{sale.items.map((i) => i.itemName).join(", ")}</TableCell>
-                      <TableCell className="text-right text-sm">{sale.items.reduce((s, i) => s + i.qtyPc, 0)}PC</TableCell>
-                      <TableCell className="text-right text-sm font-medium">{formatCurrency(sale.totalAmount)}</TableCell>
+                      <TableCell className="tabular-nums text-right text-sm">{sale.items.reduce((s, i) => s + i.qtyPc, 0)}PC</TableCell>
+                      <TableCell className="tabular-nums text-right text-sm font-medium">{formatCurrency(sale.totalAmount)}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
-            </div>
           )}
         </CardContent>
       </Card>

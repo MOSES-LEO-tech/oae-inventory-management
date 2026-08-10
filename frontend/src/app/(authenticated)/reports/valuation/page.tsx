@@ -2,8 +2,9 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
+import { PrintButton } from "@/components/ui/print-button";
 import { Badge } from "@/components/ui/badge";
 import {
   Table,
@@ -39,17 +40,20 @@ export default function ValuationPage() {
   );
 
   return (
-    <div className="space-y-6">
-      <div>
+    <div className="space-y-6" data-print-content="true">
+      <div className="flex items-start justify-between gap-4">
+        <div>
         <Link href="/reports" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-2">
           <ArrowLeft className="mr-1 h-4 w-4" /> Back to Reports
         </Link>
         <h1 className="text-heading-sm font-semibold tracking-heading-sm">Stock Valuation</h1>
         <p className="text-muted-foreground">Total value of stock per item and store.</p>
+        </div>
+        <div data-print-hide="true"><PrintButton /></div>
       </div>
 
       {/* Filters */}
-      <div className="flex flex-wrap gap-3">
+      <div className="flex flex-wrap gap-3" data-print-hide="true">
         <select
           value={selectedStoreId ?? ""}
           onChange={(e) => setSelectedStoreId(e.target.value || null)}
@@ -76,7 +80,7 @@ export default function ValuationPage() {
           <DollarSign className="h-5 w-5 text-muted-foreground" />
           <div>
             <p className="text-xs text-muted-foreground">Total Inventory Value</p>
-            <p className="text-2xl font-bold">{formatCurrency(totalValue)}</p>
+            <p className="tabular-nums text-2xl font-bold">{formatCurrency(totalValue)}</p>
           </div>
         </CardContent>
       </Card>
@@ -84,8 +88,7 @@ export default function ValuationPage() {
       {/* Table */}
       <Card>
         <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <Table>
+          {filtered.length === 0 ? <EmptyState icon={<DollarSign className="h-10 w-10" />} title="No inventory records" description="Adjust the store or stock year filters to see results." /> : <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Item Name</TableHead>
@@ -111,21 +114,20 @@ export default function ValuationPage() {
                         <Badge variant="outline" className="text-xs">{row.stockYear}</Badge>
                       </TableCell>
                       <TableCell className="text-right text-sm">{row.qtyPc}</TableCell>
-                      <TableCell className="text-right text-sm">{formatCurrency(row.unitPricePc)}</TableCell>
+                      <TableCell className="tabular-nums text-right text-sm">{formatCurrency(row.unitPricePc)}</TableCell>
                       <TableCell className="text-right text-sm">{row.qtyCtn}</TableCell>
-                      <TableCell className="text-right text-sm">{formatCurrency(row.unitPriceCtn)}</TableCell>
-                      <TableCell className="text-right text-sm font-medium">{formatCurrency(value)}</TableCell>
+                      <TableCell className="tabular-nums text-right text-sm">{formatCurrency(row.unitPriceCtn)}</TableCell>
+                      <TableCell className="tabular-nums text-right text-sm font-medium">{formatCurrency(value)}</TableCell>
                     </TableRow>
                   );
                 })}
                 {/* Grand Total */}
                 <TableRow>
                   <TableCell colSpan={8} className="text-right font-bold text-sm">Grand Total</TableCell>
-                  <TableCell className="text-right font-bold text-sm">{formatCurrency(totalValue)}</TableCell>
+                  <TableCell className="tabular-nums text-right font-bold text-sm">{formatCurrency(totalValue)}</TableCell>
                 </TableRow>
               </TableBody>
-            </Table>
-          </div>
+            </Table>}
         </CardContent>
       </Card>
     </div>

@@ -4,6 +4,8 @@ import { useState, useMemo } from "react";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { EmptyState } from "@/components/ui/empty-state";
+import { PrintButton } from "@/components/ui/print-button";
 import {
   Table,
   TableBody,
@@ -20,14 +22,15 @@ export default function SalesReportPage() {
   const { selectedStoreId, setSelectedStoreId } = useUIStore();
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const dateError = dateFrom && dateTo && dateFrom > dateTo ? "The start date must be before the end date." : "";
 
   const filtered = useMemo(() => {
     let rows = MOCK_SALES;
     if (selectedStoreId) rows = rows.filter((s) => s.storeId === selectedStoreId);
-    if (dateFrom) rows = rows.filter((s) => s.createdAt >= dateFrom);
-    if (dateTo) rows = rows.filter((s) => s.createdAt <= dateTo + "T23:59:59Z");
+    if (dateFrom && !dateError) rows = rows.filter((s) => s.createdAt >= dateFrom);
+    if (dateTo && !dateError) rows = rows.filter((s) => s.createdAt <= dateTo + "T23:59:59Z");
     return rows.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  }, [selectedStoreId, dateFrom, dateTo]);
+  }, [selectedStoreId, dateFrom, dateTo, dateError]);
 
   const totalRevenue = filtered.reduce((s, sale) => s + sale.totalAmount, 0);
   const totalItemsSold = filtered.reduce(
@@ -51,17 +54,20 @@ export default function SalesReportPage() {
   }, [filtered]);
 
   return (
-    <div className="space-y-6">
-      <div>
+    <div className="space-y-6" data-print-content="true">
+      <div className="flex items-start justify-between gap-4">
+        <div>
         <Link href="/reports" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-2">
           <ArrowLeft className="mr-1 h-4 w-4" /> Back to Reports
         </Link>
         <h1 className="text-heading-sm font-semibold tracking-heading-sm">Sales Summary</h1>
         <p className="text-muted-foreground">Sales by store, item, and date range.</p>
+        </div>
+        <div data-print-hide="true"><PrintButton /></div>
       </div>
 
       {/* Filters */}
-      <Card>
+      <Card data-print-hide="true">
         <CardContent className="p-4">
           <div className="flex flex-wrap gap-3">
             <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="w-40" aria-label="Date from" />
@@ -76,6 +82,7 @@ export default function SalesReportPage() {
               {MOCK_STORES.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
             </select>
           </div>
+          {dateError && <p className="mt-3 text-sm text-destructive" role="alert">{dateError}</p>}
         </CardContent>
       </Card>
 
@@ -86,7 +93,7 @@ export default function SalesReportPage() {
             <DollarSign className="h-5 w-5 text-mid-gray" />
             <div>
               <p className="text-xs text-muted-foreground">Total Revenue</p>
-              <p className="text-xl font-semibold">{formatCurrency(totalRevenue)}</p>
+              <p className="tabular-nums text-xl font-semibold">{formatCurrency(totalRevenue)}</p>
             </div>
           </CardContent>
         </Card>
@@ -95,7 +102,7 @@ export default function SalesReportPage() {
             <ShoppingBag className="h-5 w-5 text-mid-gray" />
             <div>
               <p className="text-xs text-muted-foreground">Items Sold</p>
-              <p className="text-xl font-semibold">{totalItemsSold}</p>
+              <p className="tabular-nums text-xl font-semibold">{totalItemsSold}</p>
             </div>
           </CardContent>
         </Card>
@@ -104,7 +111,7 @@ export default function SalesReportPage() {
             <Hash className="h-5 w-5 text-mid-gray" />
             <div>
               <p className="text-xs text-muted-foreground">Sales Count</p>
-              <p className="text-xl font-semibold">{filtered.length}</p>
+              <p className="tabular-nums text-xl font-semibold">{filtered.length}</p>
             </div>
           </CardContent>
         </Card>
@@ -113,7 +120,7 @@ export default function SalesReportPage() {
             <TrendingUp className="h-5 w-5 text-mid-gray" />
             <div>
               <p className="text-xs text-muted-foreground">Average Sale</p>
-              <p className="text-xl font-semibold">{formatCurrency(avgSale)}</p>
+              <p className="tabular-nums text-xl font-semibold">{formatCurrency(avgSale)}</p>
             </div>
           </CardContent>
         </Card>
@@ -125,8 +132,7 @@ export default function SalesReportPage() {
           <CardTitle>Sales Records</CardTitle>
         </CardHeader>
         <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <Table>
+          {filtered.length === 0 ? <EmptyState icon={<ShoppingBag className="h-10 w-10" />} title="No sales records" description="Adjust the date or store filters to see results." /> : <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Date</TableHead>
@@ -157,8 +163,7 @@ export default function SalesReportPage() {
                   </TableRow>
                 ))}
               </TableBody>
-            </Table>
-          </div>
+            </Table>}
         </CardContent>
       </Card>
 
@@ -169,8 +174,7 @@ export default function SalesReportPage() {
             <CardTitle>Breakdown by Item</CardTitle>
           </CardHeader>
           <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <Table>
+            <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Item</TableHead>
@@ -187,8 +191,7 @@ export default function SalesReportPage() {
                     </TableRow>
                   ))}
                 </TableBody>
-              </Table>
-            </div>
+            </Table>
           </CardContent>
         </Card>
       )}

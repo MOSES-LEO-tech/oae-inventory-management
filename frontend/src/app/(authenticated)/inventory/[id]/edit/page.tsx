@@ -7,7 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Save } from "lucide-react";
+import { Breadcrumbs } from "@/components/layout/breadcrumbs";
+import { Save } from "lucide-react";
 import { MOCK_ITEMS } from "@/lib/mock-data";
 
 export default function EditItemPage() {
@@ -52,11 +53,9 @@ export default function EditItemPage() {
   return (
     <div className="space-y-6">
       <div>
-        <Link href="/inventory" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-2">
-          <ArrowLeft className="mr-1 h-4 w-4" /> Back to Inventory
-        </Link>
-        <h1 className="text-2xl font-bold tracking-tight">Edit Item</h1>
-        <p className="text-muted-foreground">Update details for "{item.name}".</p>
+        <Breadcrumbs items={[{ label: "Inventory", href: "/inventory" }, { label: "Edit Item" }]} />
+        <h1 className="text-heading-sm font-semibold tracking-heading-sm">Edit Item</h1>
+        <p className="text-body text-mid-gray">Update details for &ldquo;{item.name}&rdquo;.</p>
       </div>
 
       <Card>

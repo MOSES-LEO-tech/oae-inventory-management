@@ -2,10 +2,9 @@ import { create } from "zustand";
 import { InventoryWithItem } from "@/types";
 import {
   getDocuments,
-  addDocument,
   updateDocument,
 } from "@/lib/firebase/firestore";
-import { where, orderBy } from "firebase/firestore";
+import { orderBy } from "firebase/firestore";
 
 interface InventoryState {
   items: InventoryWithItem[];
@@ -59,6 +58,8 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
   },
 
   adjustStock: async (inventoryId, adjustmentPc, adjustmentCtn, notes, performedBy) => {
+    void notes;
+    void performedBy;
     const item = get().items.find((i) => i.id === inventoryId);
     if (!item) throw new Error("Item not found");
 

@@ -4,8 +4,21 @@
 
 @custom-variant dark (&:is(.dark *));
 
+:root {
+  --font-scale: 1;
+  --density: 1;
+  --density-space: calc(var(--density) * 1rem);
+  --density-row: calc(var(--density) * 2.5rem);
+  --density-radius-mult: var(--density);
+  --strong-focus: 0;
+}
+
+html {
+  font-size: calc(16px * var(--font-scale));
+}
+
 @theme inline {
-  /* ── Fonts (preserved: Geist) ─────────────────────────── */
+  /* ── Fonts ────────────────────────────────────────────── */
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   --font-heading: var(--font-geist-sans);
@@ -66,27 +79,27 @@
   --shadow-subtle-2: lab(2.75381 0 0) 0px 0px 0px 0px;
 
   /* ── DESIGN.md type scale ─────────────────────────────── */
-  --text-caption: 12px;
+  --text-caption: calc(12px * var(--font-scale));
   --leading-caption: 1.33;
   --tracking-caption: 0.6px;
-  --text-body: 14px;
+  --text-body: calc(14px * var(--font-scale));
   --leading-body: 1.43;
-  --text-body-lg: 16px;
+  --text-body-lg: calc(16px * var(--font-scale));
   --leading-body-lg: 1.5;
-  --text-subheading: 18px;
+  --text-subheading: calc(18px * var(--font-scale));
   --leading-subheading: 1.56;
-  --text-heading-sm: 24px;
+  --text-heading-sm: calc(24px * var(--font-scale));
   --leading-heading-sm: 1.33;
-  --tracking-heading-sm: -0.6px;
-  --text-heading: 30px;
+  --tracking-heading-sm: calc(-0.6px * var(--font-scale));
+  --text-heading: calc(30px * var(--font-scale));
   --leading-heading: 1.2;
-  --tracking-heading: -0.75px;
-  --text-heading-lg: 36px;
+  --tracking-heading: calc(-0.75px * var(--font-scale));
+  --text-heading-lg: calc(36px * var(--font-scale));
   --leading-heading-lg: 1.11;
-  --tracking-heading-lg: -0.9px;
-  --text-display: 48px;
+  --tracking-heading-lg: calc(-0.9px * var(--font-scale));
+  --text-display: calc(48px * var(--font-scale));
   --leading-display: 1.1;
-  --tracking-display: -2.4px;
+  --tracking-display: calc(-2.4px * var(--font-scale));
 }
 
 /* ── Light: military green + white ──────────────────────── */
@@ -177,8 +190,92 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+    font-kerning: normal;
+    font-variant-numeric: proportional-nums;
+    letter-spacing: 0;
+    transition: box-shadow 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.15s ease;
+  }
+
+  input,
+  textarea,
+  select,
+  button {
+    letter-spacing: 0;
+  }
+
+  .tabular-nums {
+    font-variant-numeric: tabular-nums lining-nums;
+    letter-spacing: normal !important;
   }
   html {
     @apply font-sans;
+  }
+
+  /* ── Focus rings ────────────────────────────────────── */
+  :where(button, a, input, select, textarea, [tabindex]):focus-visible {
+    outline:
+      calc(2px + (var(--strong-focus) * 2px))
+      solid
+      color-mix(in oklab, var(--ring) 90%, transparent);
+    outline-offset: calc(1px + var(--strong-focus) * 1px);
+    border-radius: var(--radius-md);
+  }
+
+  html[data-strong-focus="true"] :where(button, a, input, select, textarea, [tabindex]):focus-visible {
+    box-shadow:
+      0 0 0 1px color-mix(in oklab, var(--ring) 95%, transparent),
+      0 0 0 5px color-mix(in oklab, var(--ring) 25%, transparent);
+  }
+
+  /* ── Reduced motion ─────────────────────────────────── */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001ms !important;
+      scroll-behavior: auto !important;
+    }
+    body {
+      transition: none !important;
+    }
+  }
+
+  html[data-reduced-motion="true"] *,
+  html[data-reduced-motion="true"] *::before,
+  html[data-reduced-motion="true"] *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  html[data-reduced-motion="true"] body {
+    transition: none !important;
+  }
+}
+
+@media print {
+  body {
+    background: #ffffff;
+  }
+
+  [data-print-hide="true"] {
+    display: none !important;
+  }
+
+  [data-print-content="true"] {
+    width: 100% !important;
+    max-width: none !important;
+  }
+
+  table {
+    break-inside: auto;
+  }
+
+  tr {
+    break-inside: avoid;
+    break-after: auto;
   }
 }

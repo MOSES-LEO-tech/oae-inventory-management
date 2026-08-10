@@ -7,6 +7,32 @@
 
 ---
 
+## Recent Frontend Changes — 2026-08-10
+
+> **Pull this latest before continuing your Firebase work.** This push is frontend-only — no Firestore schema or data-model changes.
+
+### What's new in this push
+
+| Area | Change |
+|------|--------|
+| Settings page | Expanded to 9 tabs: Appearance, Company, Currency, Defaults, Users, Stores, Notifications, Roles, Stock Rules |
+| Preferences system | New `src/lib/preferences.ts` + `src/stores/ui-store.ts` slice, persisted to `localStorage["oae.settings.v1"]` (250ms debounced writes) |
+| Theme toggle | Fixed — header toggle now writes through to prefs (`setTheme` + `patchPrefs`), survives reload and persists |
+| Dark mode | Follows `appearance.theme` (light / dark / system); `PrefsApplier` syncs next-themes and CSS tokens |
+| Mobile menu | Fully accessible: scroll-lock, ESC to close, focus trap + restore, `inert` when closed, dialog semantics |
+| Tables | Shared `table.tsx` standardized: density-aware padding, uppercase header band, sticky thead, row hover, `tabular-nums` |
+| New components | `Breadcrumbs`, `EmptyState`, `PrintButton`, `PrefsApplier` |
+| Layout cleanup | Removed redundant `overflow-x-auto` wrappers across dashboard, settings, reports, inventory, stock-taking |
+
+### Impact on your Firebase work
+
+- **No Firestore schema changes** — the data model in section 5 is unchanged.
+- Preferences are **client-side only** (localStorage); nothing to provision in Firestore.
+- Settings Users/Stores/Roles tabs are still mock UI — they'll read from your `users` / `stores` collections once wired.
+- DEV BYPASS in `auth-provider.tsx` is still in place — remove it when Firebase is configured (unchanged from before).
+
+---
+
 ## Table of Contents
 
 1. [Project Overview](#1-project-overview)

@@ -8,8 +8,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Save } from "lucide-react";
-import { MOCK_INVENTORY, MOCK_ITEMS, formatCurrency, getStoreName } from "@/lib/mock-data";
+import { Breadcrumbs } from "@/components/layout/breadcrumbs";
+import { Save } from "lucide-react";
+import { MOCK_INVENTORY, MOCK_ITEMS, getStoreName } from "@/lib/mock-data";
+import { adjustmentSchema, flattenValidationErrors, type ValidationErrors } from "@/lib/validation";
 
 export default function AdjustStockPage() {
   const { id } = useParams<{ id: string }>();
@@ -20,9 +22,16 @@ export default function AdjustStockPage() {
   const [adjCtn, setAdjCtn] = useState(0);
   const [reason, setReason] = useState("");
   const [saving, setSaving] = useState(false);
+  const [errors, setErrors] = useState<ValidationErrors>({});
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const result = adjustmentSchema.safeParse({ adjPc, adjCtn, reason, currentPc: row?.qtyPc ?? 0, currentCtn: row?.qtyCtn ?? 0 });
+    if (!result.success) {
+      setErrors(flattenValidationErrors(result.error));
+      return;
+    }
+    setErrors({});
     setSaving(true);
     setTimeout(() => {
       alert("Stock adjustment would be saved (dev mode)");
@@ -45,11 +54,9 @@ export default function AdjustStockPage() {
   return (
     <div className="space-y-6">
       <div>
-        <Link href="/inventory" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-2">
-          <ArrowLeft className="mr-1 h-4 w-4" /> Back to Inventory
-        </Link>
-        <h1 className="text-2xl font-bold tracking-tight">Adjust Stock</h1>
-        <p className="text-muted-foreground">Manually correct stock levels for "{row.name}" ({row.type}).</p>
+        <Breadcrumbs items={[{ label: "Inventory", href: "/inventory" }, { label: "Adjust Stock" }]} />
+        <h1 className="text-heading-sm font-semibold tracking-heading-sm">Adjust Stock</h1>
+        <p className="text-body text-mid-gray">Manually correct stock levels for {row.name} ({row.type}).</p>
       </div>
 
       {/* Current balance */}
@@ -95,6 +102,7 @@ export default function AdjustStockPage() {
                 <p className="text-xs text-muted-foreground">
                   Positive = add, Negative = remove
                 </p>
+                {errors.adjPc && <p className="text-sm text-destructive" role="alert">{errors.adjPc}</p>}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="adjCtn">Adjustment (CTN)</Label>
@@ -107,6 +115,7 @@ export default function AdjustStockPage() {
                 <p className="text-xs text-muted-foreground">
                   Positive = add, Negative = remove
                 </p>
+                {errors.adjCtn && <p className="text-sm text-destructive" role="alert">{errors.adjCtn}</p>}
               </div>
             </div>
 
@@ -139,6 +148,7 @@ export default function AdjustStockPage() {
                 required
                 rows={3}
               />
+              {errors.reason && <p className="text-sm text-destructive" role="alert">{errors.reason}</p>}
             </div>
 
             <div className="flex justify-end gap-3">

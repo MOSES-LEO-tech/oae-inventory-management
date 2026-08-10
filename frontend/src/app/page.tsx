@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { useAuth } from "@/components/auth/auth-provider";
 import { useAuthStore } from "@/stores/auth-store";
 import { signIn } from "@/lib/firebase/auth";
@@ -83,9 +84,11 @@ export default function LoginPage() {
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1 text-center">
           <div className="mx-auto mb-4">
-            <img
+            <Image
               src="/logo-oat.svg"
               alt="OAE Logo"
+              width={256}
+              height={64}
               className="h-16 w-auto mx-auto"
             />
           </div>

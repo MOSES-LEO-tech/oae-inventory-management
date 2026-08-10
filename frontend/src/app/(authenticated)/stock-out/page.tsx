@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,9 +14,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
 import { ArrowUpFromLine, AlertCircle } from "lucide-react";
 import { MOCK_ITEMS, MOCK_SALES, MOCK_STORES, MOCK_INVENTORY, formatCurrency, getStoreName } from "@/lib/mock-data";
+import { flattenValidationErrors, stockOutSchema, type ValidationErrors } from "@/lib/validation";
 
 export default function StockOutPage() {
   const [selectedItemId, setSelectedItemId] = useState("");
@@ -26,6 +27,7 @@ export default function StockOutPage() {
   const [storeId, setStoreId] = useState("main-stores");
   const [saving, setSaving] = useState(false);
   const [warning, setWarning] = useState("");
+  const [errors, setErrors] = useState<ValidationErrors>({});
 
   const filteredItems = useMemo(() => {
     if (!itemSearch) return MOCK_ITEMS.slice(0, 10);
@@ -35,7 +37,6 @@ export default function StockOutPage() {
     );
   }, [itemSearch]);
 
-  const selectedItem = MOCK_ITEMS.find((i) => i.id === selectedItemId);
   const stock = MOCK_INVENTORY.find(
     (i) => i.id === selectedItemId && i.storeId === storeId
   );
@@ -78,6 +79,12 @@ export default function StockOutPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const result = stockOutSchema.safeParse({ selectedItemId, itemId: selectedItemId, qtyPc, qtyCtn, unitPrice, storeId });
+    if (!result.success) {
+      setErrors(flattenValidationErrors(result.error));
+      return;
+    }
+    setErrors({});
     setSaving(true);
     setTimeout(() => {
       alert("Sale recorded (dev mode)");
@@ -101,13 +108,17 @@ export default function StockOutPage() {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label>Select Item *</Label>
-              <Input
-                placeholder="Search item..."
-                value={itemSearch}
-                onChange={(e) => setItemSearch(e.target.value)}
-              />
-              <div className="max-h-40 overflow-y-auto rounded-2xl border border-hairline">
+              <Label htmlFor="stock-out-item-search">Select Item *</Label>
+              <div className="rounded-2xl border border-hairline overflow-hidden">
+                <Input
+                  id="stock-out-item-search"
+                  aria-label="Search items"
+                  placeholder="Search item…"
+                  value={itemSearch}
+                  onChange={(e) => setItemSearch(e.target.value)}
+                  className="border-0 rounded-none"
+                />
+                <div className="max-h-40 overflow-y-auto border-t border-hairline">
                 {filteredItems.map((item) => (
                   <button
                     key={item.id}
@@ -127,24 +138,29 @@ export default function StockOutPage() {
                   </button>
                 ))}
               </div>
+              {errors.itemId && <p className="text-sm text-destructive" role="alert">{errors.itemId}</p>}
+              </div>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-3">
               <div className="space-y-2">
-                <Label>Qty (PC) *</Label>
+                <Label htmlFor="stock-out-qty-pc">Qty (PC) *</Label>
                 <Input
                   type="number"
+                  id="stock-out-qty-pc"
                   min={0}
                   value={qtyPc}
                   onChange={(e) => handleQtyChange("pc", e.target.value)}
                   placeholder="0"
                   required
                 />
+                {errors.qtyPc && <p className="text-sm text-destructive" role="alert">{errors.qtyPc}</p>}
               </div>
               <div className="space-y-2">
-                <Label>Qty (CTN) *</Label>
+                <Label htmlFor="stock-out-qty-ctn">Qty (CTN) *</Label>
                 <Input
                   type="number"
+                  id="stock-out-qty-ctn"
                   min={0}
                   value={qtyCtn}
                   onChange={(e) => handleQtyChange("ctn", e.target.value)}
@@ -153,9 +169,10 @@ export default function StockOutPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Unit Price (UGX)</Label>
+                <Label htmlFor="stock-out-unit-price">Unit Price (UGX)</Label>
                 <Input
                   type="number"
+                  id="stock-out-unit-price"
                   min={0}
                   value={unitPrice}
                   onChange={(e) => setUnitPrice(e.target.value)}
@@ -165,9 +182,10 @@ export default function StockOutPage() {
             </div>
 
             <div className="space-y-2">
-              <Label>Store</Label>
+              <Label htmlFor="stock-out-store">Store</Label>
               <select
                 value={storeId}
+                id="stock-out-store"
                 onChange={(e) => setStoreId(e.target.value)}
                 className="w-full h-9 rounded-2xl border border-transparent bg-canvas px-3 text-sm outline-none transition-colors focus-visible:border-hairline focus-visible:bg-paper focus-visible:ring-2 focus-visible:ring-hairline/40"
               >
@@ -178,7 +196,7 @@ export default function StockOutPage() {
             </div>
 
             {warning && (
-              <div className="flex items-center gap-2 rounded-2xl bg-surface-alt border border-hairline p-3 text-sm text-ink">
+              <div className="flex items-center gap-2 rounded-2xl bg-surface-alt border border-hairline p-3 text-sm text-ink" role="alert" aria-live="polite">
                 <AlertCircle className="h-4 w-4 shrink-0" />
                 <p>{warning}</p>
               </div>
@@ -205,69 +223,67 @@ export default function StockOutPage() {
         <Card>
           <CardContent className="p-4">
             <p className="text-xs text-muted-foreground">Total Revenue</p>
-            <p className="text-2xl font-bold">{formatCurrency(totalTodayRevenue)}</p>
+            <p className="tabular-nums text-2xl font-bold">{formatCurrency(totalTodayRevenue)}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
             <p className="text-xs text-muted-foreground">Items Sold</p>
-            <p className="text-2xl font-bold">{totalTodayItems}</p>
+            <p className="tabular-nums text-2xl font-bold">{totalTodayItems}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
             <p className="text-xs text-muted-foreground">Average Sale</p>
-            <p className="text-2xl font-bold">{formatCurrency(avgSale)}</p>
+            <p className="tabular-nums text-2xl font-bold">{formatCurrency(avgSale)}</p>
           </CardContent>
         </Card>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Today's Sales</CardTitle>
+          <CardTitle>Today&rsquo;s Sales</CardTitle>
         </CardHeader>
         <CardContent className="p-0">
           {todaySales.length === 0 ? (
-            <div className="p-6 text-center text-muted-foreground">
-              <ArrowUpFromLine className="mx-auto mb-2 h-6 w-6" />
-              <p>No sales today.</p>
-            </div>
+            <EmptyState
+              icon={<ArrowUpFromLine className="h-10 w-10" />}
+              title="No sales today"
+            />
           ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Time</TableHead>
-                    <TableHead>Items</TableHead>
-                    <TableHead>Store</TableHead>
-                    <TableHead className="text-right">Qty</TableHead>
-                    <TableHead className="text-right">Total</TableHead>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Time</TableHead>
+                  <TableHead>Items</TableHead>
+                  <TableHead>Store</TableHead>
+                  <TableHead className="text-right">Qty</TableHead>
+                  <TableHead className="text-right">Total</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {todaySales.map((sale) => (
+                  <TableRow key={sale.id}>
+                    <TableCell>
+                      {new Date(sale.createdAt).toLocaleTimeString("en-GB", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </TableCell>
+                    <TableCell>
+                      {sale.items.map((item) => item.itemName).join(", ")}
+                    </TableCell>
+                    <TableCell>{getStoreName(sale.storeId)}</TableCell>
+                    <TableCell className="text-right tabular-nums">
+                      {sale.items.reduce((s, i) => s + i.qtyPc, 0)}PC
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums font-medium">
+                      {formatCurrency(sale.totalAmount)}
+                    </TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {todaySales.map((sale) => (
-                    <TableRow key={sale.id}>
-                      <TableCell className="text-sm">
-                        {new Date(sale.createdAt).toLocaleTimeString("en-GB", {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </TableCell>
-                      <TableCell className="text-sm">
-                        {sale.items.map((item) => item.itemName).join(", ")}
-                      </TableCell>
-                      <TableCell className="text-sm">{getStoreName(sale.storeId)}</TableCell>
-                      <TableCell className="text-right text-sm">
-                        {sale.items.reduce((s, i) => s + i.qtyPc, 0)}PC
-                      </TableCell>
-                      <TableCell className="text-right text-sm font-medium">
-                        {formatCurrency(sale.totalAmount)}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                ))}
+              </TableBody>
+            </Table>
           )}
         </CardContent>
       </Card>

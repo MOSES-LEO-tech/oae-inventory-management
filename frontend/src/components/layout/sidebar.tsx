@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/auth-store";
 import {
@@ -73,7 +75,10 @@ const navItems: NavItem[] = [
 
 export function Sidebar({ open, onClose }: SidebarProps) {
   const pathname = usePathname();
-  const { user, isAdmin, isManager } = useAuthStore();
+  const { user } = useAuthStore();
+  const panelRef = useRef<HTMLElement>(null);
+  const previouslyFocusedRef = useRef<HTMLElement | null>(null);
+  const [isDesktop, setIsDesktop] = useState(false);
 
   const userRole = user?.role;
 
@@ -82,6 +87,76 @@ export function Sidebar({ open, onClose }: SidebarProps) {
     return userRole && item.requiresRoles.includes(userRole);
   });
 
+  // Track the lg breakpoint so the off-canvas panel can be made inert on
+  // mobile (removed from tab order + screen-reader tree) while it is closed.
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 1024px)");
+    const update = () => setIsDesktop(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
+
+  // Mobile menu: lock background scroll, remember where focus came from, and
+  // restore it when the panel closes so keyboard/screen-reader users never
+  // lose their place.
+  useEffect(() => {
+    if (!open) return;
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    previouslyFocusedRef.current =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      previouslyFocusedRef.current?.focus?.();
+      previouslyFocusedRef.current = null;
+    };
+  }, [open]);
+
+  // Mobile menu: close on Escape and keep Tab focus trapped inside the panel.
+  useEffect(() => {
+    if (!open) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        onClose();
+        return;
+      }
+      if (event.key !== "Tab") return;
+      const panel = panelRef.current;
+      if (!panel) return;
+      const focusables = Array.from(
+        panel.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        )
+      ).filter((el) => el.offsetParent !== null);
+      if (focusables.length === 0) return;
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [open, onClose]);
+
+  // Mobile menu: move focus into the panel after the slide-in transition.
+  useEffect(() => {
+    if (!open) return;
+    const timer = window.setTimeout(() => {
+      const panel = panelRef.current;
+      if (!panel) return;
+      const closeButton = panel.querySelector<HTMLElement>("[data-sidebar-close]");
+      (closeButton ?? panel).focus();
+    }, 50);
+    return () => window.clearTimeout(timer);
+  }, [open]);
+
   return (
     <>
       {/* Mobile overlay */}
@@ -89,11 +164,18 @@ export function Sidebar({ open, onClose }: SidebarProps) {
         <div
           className="fixed inset-0 z-40 bg-black/50 lg:hidden"
           onClick={onClose}
+          aria-hidden="true"
         />
       )}
 
       {/* Sidebar — sits one tonal step off canvas (surface-alt) */}
       <aside
+        ref={panelRef}
+        id="app-sidebar"
+        role={open ? "dialog" : undefined}
+        aria-modal={open ? "true" : undefined}
+        aria-label={open ? "Navigation menu" : undefined}
+        inert={!open && !isDesktop}
         className={cn(
           "fixed inset-y-0 left-0 z-50 flex w-64 flex-col bg-surface-alt transition-transform duration-300 lg:static lg:translate-x-0",
           open ? "translate-x-0" : "-translate-x-full"
@@ -101,17 +183,21 @@ export function Sidebar({ open, onClose }: SidebarProps) {
       >
         {/* Logo */}
         <div className="flex h-16 items-center gap-2 border-b border-hairline px-6">
-          <img
+          <Image
             src="/logo-oat.svg"
             alt="OAE Logo"
+            width={128}
+            height={32}
             className="h-8 w-auto"
           />
           <span className="text-lg font-semibold">OAE Inventory</span>
           <Button
+            data-sidebar-close
             variant="ghost"
             size="icon"
             className="ml-auto lg:hidden"
             onClick={onClose}
+            aria-label="Close navigation menu"
           >
             <X className="h-5 w-5" />
           </Button>

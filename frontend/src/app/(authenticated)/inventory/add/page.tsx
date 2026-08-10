@@ -6,7 +6,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Save } from "lucide-react";
+import { Breadcrumbs } from "@/components/layout/breadcrumbs";
+import { Save } from "lucide-react";
+import { flattenValidationErrors, addItemSchema, type ValidationErrors } from "@/lib/validation";
 
 export default function AddItemPage() {
   const [form, setForm] = useState({
@@ -20,6 +22,7 @@ export default function AddItemPage() {
     lowStockThresholdCtn: "",
   });
   const [saving, setSaving] = useState(false);
+  const [errors, setErrors] = useState<ValidationErrors>({});
 
   const updateField = (field: string, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -27,6 +30,12 @@ export default function AddItemPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const result = addItemSchema.safeParse(form);
+    if (!result.success) {
+      setErrors(flattenValidationErrors(result.error));
+      return;
+    }
+    setErrors({});
     setSaving(true);
     setTimeout(() => {
       alert("Item would be saved to Firestore (dev mode)");
@@ -37,11 +46,9 @@ export default function AddItemPage() {
   return (
     <div className="space-y-6">
       <div>
-        <Link href="/inventory" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-2">
-          <ArrowLeft className="mr-1 h-4 w-4" /> Back to Inventory
-        </Link>
-        <h1 className="text-2xl font-bold tracking-tight">Add New Item</h1>
-        <p className="text-muted-foreground">Add a new item to the inventory catalog.</p>
+        <Breadcrumbs items={[{ label: "Inventory", href: "/inventory" }, { label: "Add New Item" }]} />
+        <h1 className="text-heading-sm font-semibold tracking-heading-sm">Add New Item</h1>
+        <p className="text-body text-mid-gray">Add a new item to the inventory catalog.</p>
       </div>
 
       <Card>
@@ -60,6 +67,7 @@ export default function AddItemPage() {
                   onChange={(e) => updateField("name", e.target.value)}
                   required
                 />
+                {errors.name && <p className="text-sm text-destructive" role="alert">{errors.name}</p>}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="type">Type / Variant *</Label>
@@ -70,6 +78,7 @@ export default function AddItemPage() {
                   onChange={(e) => updateField("type", e.target.value)}
                   required
                 />
+                {errors.type && <p className="text-sm text-destructive" role="alert">{errors.type}</p>}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="code">Code (Optional)</Label>
@@ -104,6 +113,7 @@ export default function AddItemPage() {
                   onChange={(e) => updateField("unitPricePc", e.target.value)}
                   required
                 />
+                {errors.unitPricePc && <p className="text-sm text-destructive" role="alert">{errors.unitPricePc}</p>}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="unitPriceCtn">Unit Price (CTN) *</Label>
@@ -116,6 +126,7 @@ export default function AddItemPage() {
                   onChange={(e) => updateField("unitPriceCtn", e.target.value)}
                   required
                 />
+                {errors.unitPriceCtn && <p className="text-sm text-destructive" role="alert">{errors.unitPriceCtn}</p>}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="lowStockPc">Low Stock Threshold (PC)</Label>

@@ -2,12 +2,12 @@
 
 import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
 import {
   Table,
   TableBody,
@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/table";
 import { Plus, Trash2, Save, ArrowDownToLine } from "lucide-react";
 import { MOCK_ITEMS, MOCK_MOVEMENTS, MOCK_STORES, getStoreName } from "@/lib/mock-data";
+import { flattenValidationErrors, stockInSchema, type ValidationErrors } from "@/lib/validation";
 
 type BulkRow = { itemId: string; qtyPc: string; qtyCtn: string; storeId: string };
 
@@ -35,6 +36,8 @@ export default function StockInPage() {
     { itemId: "", qtyPc: "", qtyCtn: "", storeId: "main-stores" },
   ]);
   const [bulkSaving, setBulkSaving] = useState(false);
+  const [singleErrors, setSingleErrors] = useState<ValidationErrors>({});
+  const [bulkError, setBulkError] = useState("");
 
   // Search
   const [itemSearch, setItemSearch] = useState("");
@@ -52,6 +55,12 @@ export default function StockInPage() {
 
   const handleSingleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const result = stockInSchema.safeParse({ itemId: singleItemId, qtyPc: singleQtyPc, qtyCtn: singleQtyCtn, storeId: singleStore });
+    if (!result.success) {
+      setSingleErrors(flattenValidationErrors(result.error));
+      return;
+    }
+    setSingleErrors({});
     setSingleSaving(true);
     setTimeout(() => {
       alert("Stock in recorded (dev mode)");
@@ -83,6 +92,12 @@ export default function StockInPage() {
 
   const handleBulkSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const invalidRow = bulkRows.findIndex((row) => !stockInSchema.safeParse(row).success);
+    if (invalidRow !== -1) {
+      setBulkError(`Complete item ${invalidRow + 1} with an item and a positive quantity.`);
+      return;
+    }
+    setBulkError("");
     setBulkSaving(true);
     setTimeout(() => {
       alert(`${bulkRows.length} items recorded (dev mode)`);
@@ -112,13 +127,17 @@ export default function StockInPage() {
             <CardContent>
               <form onSubmit={handleSingleSubmit} className="space-y-4">
                 <div className="space-y-2">
-                  <Label>Select Item *</Label>
-                  <Input
-                    placeholder="Search item..."
-                    value={itemSearch}
-                    onChange={(e) => setItemSearch(e.target.value)}
-                  />
-                  <div className="max-h-40 overflow-y-auto rounded-2xl border border-hairline">
+                  <Label htmlFor="stock-in-item-search">Select Item *</Label>
+                  <div className="rounded-2xl border border-hairline overflow-hidden">
+                    <Input
+                      id="stock-in-item-search"
+                      aria-label="Search items"
+                      placeholder="Search item…"
+                      value={itemSearch}
+                      onChange={(e) => setItemSearch(e.target.value)}
+                      className="border-0 rounded-none"
+                    />
+                    <div className="max-h-40 overflow-y-auto border-t border-hairline">
                     {filteredItems.map((item) => (
                       <button
                         key={item.id}
@@ -136,13 +155,16 @@ export default function StockInPage() {
                       </button>
                     ))}
                   </div>
+                  </div>
+                  {singleErrors.itemId && <p className="text-sm text-destructive" role="alert">{singleErrors.itemId}</p>}
                 </div>
 
                 <div className="grid gap-4 sm:grid-cols-3">
                   <div className="space-y-2">
-                    <Label>Qty (PC)</Label>
+                    <Label htmlFor="stock-in-qty-pc">Qty (PC)</Label>
                     <Input
                       type="number"
+                      id="stock-in-qty-pc"
                       min={0}
                       value={singleQtyPc}
                       onChange={(e) => setSingleQtyPc(e.target.value)}
@@ -150,9 +172,10 @@ export default function StockInPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>Qty (CTN)</Label>
+                    <Label htmlFor="stock-in-qty-ctn">Qty (CTN)</Label>
                     <Input
                       type="number"
+                      id="stock-in-qty-ctn"
                       min={0}
                       value={singleQtyCtn}
                       onChange={(e) => setSingleQtyCtn(e.target.value)}
@@ -160,9 +183,10 @@ export default function StockInPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>Store</Label>
+                    <Label htmlFor="stock-in-store">Store</Label>
                     <select
                       value={singleStore}
+                      id="stock-in-store"
                       onChange={(e) => setSingleStore(e.target.value)}
                       className="w-full h-9 rounded-2xl border border-transparent bg-canvas px-3 text-sm outline-none transition-colors focus-visible:border-hairline focus-visible:bg-paper focus-visible:ring-2 focus-visible:ring-hairline/40"
                     >
@@ -187,6 +211,7 @@ export default function StockInPage() {
                   <Save className="mr-2 h-4 w-4" />
                   {singleSaving ? "Recording..." : "Record Stock In"}
                 </Button>
+                {singleErrors.qtyPc && <p className="text-sm text-destructive" role="alert">{singleErrors.qtyPc}</p>}
               </form>
             </CardContent>
           </Card>
@@ -200,8 +225,8 @@ export default function StockInPage() {
             </CardHeader>
             <CardContent>
               <form onSubmit={handleBulkSubmit} className="space-y-4">
-                <div className="overflow-x-auto">
-                  <Table>
+                {bulkError && <p className="text-sm text-destructive" role="alert">{bulkError}</p>}
+                <Table>
                     <TableHeader>
                       <TableRow>
                         <TableHead>Item</TableHead>
@@ -273,10 +298,9 @@ export default function StockInPage() {
                             )}
                           </TableCell>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
+                    ))}
+                  </TableBody>
+                </Table>
 
                 <div className="flex items-center gap-3">
                   <Button type="button" variant="outline" onClick={addBulkRow}>
@@ -296,46 +320,44 @@ export default function StockInPage() {
       {/* Recent Stock Ins */}
       <Card>
         <CardHeader>
-          <CardTitle>Today's Stock Ins</CardTitle>
+          <CardTitle>Today&rsquo;s Stock Ins</CardTitle>
         </CardHeader>
         <CardContent className="p-0">
           {todayMovements.length === 0 ? (
-            <div className="p-6 text-center text-muted-foreground">
-              <ArrowDownToLine className="mx-auto mb-2 h-6 w-6" />
-              <p>No stock received today.</p>
-            </div>
+            <EmptyState
+              icon={<ArrowDownToLine className="h-10 w-10" />}
+              title="No stock received today"
+            />
           ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Time</TableHead>
-                    <TableHead>Item</TableHead>
-                    <TableHead>Store</TableHead>
-                    <TableHead className="text-right">Qty PC</TableHead>
-                    <TableHead className="text-right">Qty CTN</TableHead>
-                    <TableHead>By</TableHead>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Time</TableHead>
+                  <TableHead>Item</TableHead>
+                  <TableHead className="hidden sm:table-cell">Store</TableHead>
+                  <TableHead className="text-right">Qty PC</TableHead>
+                  <TableHead className="text-right">Qty CTN</TableHead>
+                  <TableHead className="hidden sm:table-cell">By</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {todayMovements.map((m) => (
+                  <TableRow key={m.id}>
+                    <TableCell>
+                      {new Date(m.createdAt).toLocaleTimeString("en-GB", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </TableCell>
+                    <TableCell className="font-medium">{m.itemName}</TableCell>
+                    <TableCell className="hidden sm:table-cell">{getStoreName(m.storeId)}</TableCell>
+                    <TableCell className="text-right tabular-nums">{m.qtyPc}</TableCell>
+                    <TableCell className="text-right tabular-nums">{m.qtyCtn}</TableCell>
+                    <TableCell className="hidden sm:table-cell text-muted-foreground">{m.performedBy}</TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {todayMovements.map((m) => (
-                    <TableRow key={m.id}>
-                      <TableCell className="text-sm">
-                        {new Date(m.createdAt).toLocaleTimeString("en-GB", {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </TableCell>
-                      <TableCell className="text-sm font-medium">{m.itemName}</TableCell>
-                      <TableCell className="text-sm">{getStoreName(m.storeId)}</TableCell>
-                      <TableCell className="text-right text-sm">{m.qtyPc}</TableCell>
-                      <TableCell className="text-right text-sm">{m.qtyCtn}</TableCell>
-                      <TableCell className="text-sm text-muted-foreground">{m.performedBy}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                ))}
+              </TableBody>
+            </Table>
           )}
         </CardContent>
       </Card>

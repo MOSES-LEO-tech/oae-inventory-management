@@ -3,6 +3,8 @@
 import { useMemo } from "react";
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
+import { PrintButton } from "@/components/ui/print-button";
 import { Badge } from "@/components/ui/badge";
 import {
   Table,
@@ -26,13 +28,16 @@ export default function LowStockPage() {
   }, [selectedStoreId]);
 
   return (
-    <div className="space-y-6">
-      <div>
+    <div className="space-y-6" data-print-content="true">
+      <div className="flex items-start justify-between gap-4">
+        <div>
         <Link href="/reports" className="inline-flex items-center text-sm text-mid-gray hover:text-ink mb-2">
           <ArrowLeft className="mr-1 h-4 w-4" /> Back to Reports
         </Link>
         <h1 className="text-heading-sm font-semibold tracking-heading-sm">Low Stock Report</h1>
         <p className="text-body text-mid-gray">Items below their configured threshold.</p>
+        </div>
+        <div data-print-hide="true"><PrintButton /></div>
       </div>
 
       {/* Alert Banner — monochromatic tonal panel */}
@@ -46,7 +51,7 @@ export default function LowStockPage() {
       </Card>
 
       {/* Filter */}
-      <div>
+      <div data-print-hide="true">
         <select
           value={selectedStoreId ?? ""}
           onChange={(e) => setSelectedStoreId(e.target.value || null)}
@@ -61,9 +66,8 @@ export default function LowStockPage() {
       {/* Table */}
       <Card>
         <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
+          {lowStockItems.length === 0 ? <EmptyState icon={<AlertTriangle className="h-10 w-10" />} title="Stock levels are healthy" description="No items currently need restocking." /> : <Table>
+            <TableHeader>
                 <TableRow>
                   <TableHead>Item Name</TableHead>
                   <TableHead>Type</TableHead>
@@ -84,10 +88,10 @@ export default function LowStockPage() {
                       <TableCell className="text-sm font-medium">{row.name}</TableCell>
                       <TableCell className="text-sm text-muted-foreground">{row.type}</TableCell>
                       <TableCell className="hidden sm:table-cell text-sm">{getStoreName(row.storeId)}</TableCell>
-                      <TableCell className="text-right text-sm font-bold">{row.qtyPc}</TableCell>
-                      <TableCell className="text-right text-sm text-muted-foreground">{item?.lowStockThresholdPc || 0}</TableCell>
-                      <TableCell className="text-right text-sm font-bold">{row.qtyCtn}</TableCell>
-                      <TableCell className="text-right text-sm text-muted-foreground">{item?.lowStockThresholdCtn || 0}</TableCell>
+                      <TableCell className="tabular-nums text-right text-sm font-bold">{row.qtyPc}</TableCell>
+                      <TableCell className="tabular-nums text-right text-sm text-muted-foreground">{item?.lowStockThresholdPc || 0}</TableCell>
+                      <TableCell className="tabular-nums text-right text-sm font-bold">{row.qtyCtn}</TableCell>
+                      <TableCell className="tabular-nums text-right text-sm text-muted-foreground">{item?.lowStockThresholdCtn || 0}</TableCell>
                       <TableCell>
                         <Badge variant="secondary" className={`text-xs ${
                           isCritical
@@ -101,8 +105,7 @@ export default function LowStockPage() {
                   );
                 })}
               </TableBody>
-            </Table>
-          </div>
+            </Table>}
         </CardContent>
       </Card>
     </div>

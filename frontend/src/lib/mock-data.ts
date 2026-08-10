@@ -3,6 +3,23 @@
  * This file should only be used in dev mode — guarded by the DEV_BYPASS in auth-provider.tsx.
  */
 
+import {
+  CurrencyPrefs,
+  DEFAULT_PREFERENCES,
+  formatCurrencyWithPrefs,
+} from "@/lib/preferences";
+import { useUIStore } from "@/stores/ui-store";
+
+function getActiveCurrencyPrefs(): CurrencyPrefs {
+  try {
+    const state = useUIStore.getState();
+    if (state?.prefs?.currency) return state.prefs.currency;
+  } catch {
+    // Fall through to defaults if store not yet initialized (SSR / early import).
+  }
+  return DEFAULT_PREFERENCES.currency;
+}
+
 export const MOCK_STORES = [
   { id: "main-stores", name: "Main Stores" },
   { id: "store-b", name: "Store B" },
@@ -27,7 +44,7 @@ export type MockInventoryRow = MockItem & {
   qtyCtn: number;
 };
 
-export let MOCK_ITEMS: MockItem[] = [
+export const MOCK_ITEMS: MockItem[] = [
   { id: "1", name: "Ball point pens, Dolphin", type: "Blue", category: "NEW_STOCK", unitPricePc: 500, unitPriceCtn: 12000, lowStockThresholdPc: 20, lowStockThresholdCtn: 5 },
   { id: "2", name: "Ball point pens, Dolphin", type: "Black", category: "NEW_STOCK", unitPricePc: 500, unitPriceCtn: 12000, lowStockThresholdPc: 20, lowStockThresholdCtn: 5 },
   { id: "3", name: "Binding Rings, PVC", type: "12mm", category: "NEW_STOCK", unitPricePc: 2000, unitPriceCtn: 0, lowStockThresholdPc: 10, lowStockThresholdCtn: 0 },
@@ -50,7 +67,7 @@ export let MOCK_ITEMS: MockItem[] = [
   { id: "20", name: "Manuscript Books, A4", type: "3Q", category: "NEW_STOCK", unitPricePc: 1500, unitPriceCtn: 0, lowStockThresholdPc: 10, lowStockThresholdCtn: 0 },
 ];
 
-export let MOCK_INVENTORY: MockInventoryRow[] = [
+export const MOCK_INVENTORY: MockInventoryRow[] = [
   // Main Stores
   { ...MOCK_ITEMS[0], storeId: "main-stores", stockYear: "2026", qtyPc: 45, qtyCtn: 8 },
   { ...MOCK_ITEMS[1], storeId: "main-stores", stockYear: "2026", qtyPc: 38, qtyCtn: 7 },
@@ -147,8 +164,9 @@ export const MOCK_TRANSFERS: MockTransfer[] = [
 ];
 
 // Utility
-export function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat("en-UG", { style: "currency", currency: "UGX", minimumFractionDigits: 0 }).format(amount);
+export function formatCurrency(amount: number, currencyPrefs?: CurrencyPrefs): string {
+  const prefs = currencyPrefs ?? getActiveCurrencyPrefs();
+  return formatCurrencyWithPrefs(amount, prefs);
 }
 
 export function getStoreName(storeId: string): string {
