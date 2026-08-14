@@ -208,6 +208,16 @@ html {
     font-variant-numeric: tabular-nums lining-nums;
     letter-spacing: normal !important;
   }
+
+  /* ── Fluid stat numbers ─────────────────────────────── */
+  /* Scales with the card's actual width (card root is @container/card)
+     so long values like "USh 1,468,500" never overflow the card.
+     8.5cqi keeps the worst case (horizontal stat cards that reserve
+     ~64px for icon + gap + padding) within a ~10% safety margin. */
+  .stat-value {
+    font-size: clamp(0.75rem, 8.5cqi, 1.5rem);
+    line-height: 1.25;
+  }
   html {
     @apply font-sans;
   }

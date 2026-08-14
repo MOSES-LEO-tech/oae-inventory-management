@@ -118,7 +118,7 @@ function AdminDashboard() {
         <h2 className="text-caption font-medium uppercase tracking-caption text-mid-gray">Overview</h2>
         <div className="flex-1 border-t border-hairline" />
       </div>
-      <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
         {stats.map((stat) => (
           <Card key={stat.title} className="min-w-0 transition-shadow hover:shadow-subtle-2">
             <CardHeader className="flex min-h-14 flex-row items-start justify-between gap-2 pb-2">
@@ -126,7 +126,7 @@ function AdminDashboard() {
               <stat.icon className="mt-0.5 h-4 w-4 shrink-0 text-mid-gray" />
             </CardHeader>
             <CardContent className="min-w-0 pt-0">
-              <div className="tabular-nums whitespace-nowrap text-xl font-semibold tracking-tight sm:text-2xl">{stat.value}</div>
+              <div className="stat-value tabular-nums whitespace-nowrap font-semibold tracking-tight">{stat.value}</div>
               <p className="mt-1 min-h-8 text-xs leading-4 text-mid-gray">{stat.desc}</p>
             </CardContent>
           </Card>
@@ -279,7 +279,7 @@ function ManagerDashboard() {
         <h2 className="text-caption font-medium uppercase tracking-caption text-mid-gray">Store Stats</h2>
         <div className="flex-1 border-t border-hairline" />
       </div>
-      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat) => (
           <Card key={stat.title} className="min-w-0">
             <CardHeader className="flex min-h-14 flex-row items-start justify-between gap-2 pb-2">
@@ -287,7 +287,7 @@ function ManagerDashboard() {
               <stat.icon className="mt-0.5 h-4 w-4 shrink-0 text-mid-gray" />
             </CardHeader>
             <CardContent className="min-w-0 pt-0">
-              <div className="tabular-nums whitespace-nowrap text-xl font-semibold tracking-tight sm:text-2xl">{stat.value}</div>
+              <div className="stat-value tabular-nums whitespace-nowrap font-semibold tracking-tight">{stat.value}</div>
               <p className="mt-1 min-h-8 text-xs leading-4 text-mid-gray">{stat.desc}</p>
             </CardContent>
           </Card>
@@ -472,13 +472,13 @@ function ClerkDashboard() {
       </Card>
 
       {/* Stats */}
-      <div className="grid gap-4 grid-cols-3">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-3">
         <Card className="transition-shadow hover:shadow-subtle-2">
           <CardContent className="flex items-center gap-3 p-4">
             <DollarSign className="h-5 w-5 text-mid-gray" />
             <div>
               <p className="text-caption font-medium uppercase tracking-caption text-mid-gray">Today&apos;s Sales</p>
-              <p className="tabular-nums text-xl font-semibold tracking-tight">{formatCurrency(totalRevenue)}</p>
+              <p className="stat-value tabular-nums whitespace-nowrap font-semibold tracking-tight">{formatCurrency(totalRevenue)}</p>
             </div>
           </CardContent>
         </Card>
@@ -487,7 +487,7 @@ function ClerkDashboard() {
             <ShoppingBag className="h-5 w-5 text-mid-gray" />
             <div>
               <p className="text-caption font-medium uppercase tracking-caption text-mid-gray">Items Sold</p>
-              <p className="tabular-nums text-xl font-semibold tracking-tight">{totalItemsSold}</p>
+              <p className="stat-value tabular-nums whitespace-nowrap font-semibold tracking-tight">{totalItemsSold}</p>
             </div>
           </CardContent>
         </Card>
@@ -496,7 +496,7 @@ function ClerkDashboard() {
             <TrendingUp className="h-5 w-5 text-mid-gray" />
             <div>
               <p className="text-caption font-medium uppercase tracking-caption text-mid-gray">Sales Count</p>
-              <p className="tabular-nums text-xl font-semibold tracking-tight">{myTodaySales.length}</p>
+              <p className="stat-value tabular-nums whitespace-nowrap font-semibold tracking-tight">{myTodaySales.length}</p>
             </div>
           </CardContent>
         </Card>

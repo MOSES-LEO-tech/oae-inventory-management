@@ -63,6 +63,7 @@ Operates under 8 IDE rules. Project rules override global rules.
 | Rule 13 | MCP operational protocol, error handling, health checks |
 | Rule 14 | Integrated Reasoning Protocol — brainstorming + Sequential Thinking dual-tool pipeline |
 | Rule 15 | Structured Q&A Mandate — AskUserQuestion tool for all agent-to-user questions |
+| Rule 16 | MCP Usage Mandate — MCP tools are the default execution path over Skills/manual methods |
 
 ## Subagent Delegation
 
