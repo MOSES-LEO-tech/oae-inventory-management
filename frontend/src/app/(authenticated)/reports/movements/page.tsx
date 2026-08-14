@@ -2,9 +2,10 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { EmptyState } from "@/components/ui/empty-state";
+import { PrintButton } from "@/components/ui/print-button";
 import { Badge } from "@/components/ui/badge";
 import {
   Table,
@@ -31,28 +32,32 @@ export default function MovementsPage() {
   const [typeFilter, setTypeFilter] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const dateError = dateFrom && dateTo && dateFrom > dateTo ? "The start date must be before the end date." : "";
 
   const filtered = useMemo(() => {
     let rows = [...MOCK_MOVEMENTS];
     if (selectedStoreId) rows = rows.filter((m) => m.storeId === selectedStoreId);
     if (typeFilter) rows = rows.filter((m) => m.type === typeFilter);
-    if (dateFrom) rows = rows.filter((m) => m.createdAt >= dateFrom);
-    if (dateTo) rows = rows.filter((m) => m.createdAt <= dateTo + "T23:59:59Z");
+    if (dateFrom && !dateError) rows = rows.filter((m) => m.createdAt >= dateFrom);
+    if (dateTo && !dateError) rows = rows.filter((m) => m.createdAt <= dateTo + "T23:59:59Z");
     return rows.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  }, [selectedStoreId, typeFilter, dateFrom, dateTo]);
+  }, [selectedStoreId, typeFilter, dateFrom, dateTo, dateError]);
 
   const totalIn = filtered.filter((m) => m.type === "IN").reduce((s, m) => s + m.qtyPc, 0);
   const totalOut = filtered.filter((m) => m.type === "OUT").reduce((s, m) => s + m.qtyPc, 0);
   const net = totalIn - totalOut;
 
   return (
-    <div className="space-y-6">
-      <div>
+    <div className="space-y-6" data-print-content="true">
+      <div className="flex items-start justify-between gap-4">
+        <div>
         <Link href="/reports" className="inline-flex items-center text-sm text-mid-gray hover:text-ink mb-2">
           <ArrowLeft className="mr-1 h-4 w-4" /> Back to Reports
         </Link>
         <h1 className="text-heading-sm font-semibold tracking-heading-sm">Movement History</h1>
         <p className="text-body text-mid-gray">All stock in, out, and transfer records.</p>
+        </div>
+        <div data-print-hide="true"><PrintButton /></div>
       </div>
 
       {/* Summary Cards */}
@@ -62,7 +67,7 @@ export default function MovementsPage() {
             <ArrowDownToLine className="h-5 w-5 text-mid-gray" />
             <div>
               <p className="text-caption font-medium uppercase tracking-caption text-mid-gray">Total IN</p>
-              <p className="text-xl font-semibold text-ink">{totalIn}</p>
+              <p className="tabular-nums text-xl font-semibold text-ink">{totalIn}</p>
             </div>
           </CardContent>
         </Card>
@@ -71,7 +76,7 @@ export default function MovementsPage() {
             <ArrowUpFromLine className="h-5 w-5 text-mid-gray" />
             <div>
               <p className="text-caption font-medium uppercase tracking-caption text-mid-gray">Total OUT</p>
-              <p className="text-xl font-semibold text-ink">{totalOut}</p>
+              <p className="tabular-nums text-xl font-semibold text-ink">{totalOut}</p>
             </div>
           </CardContent>
         </Card>
@@ -80,14 +85,14 @@ export default function MovementsPage() {
             <ArrowRightLeft className="h-5 w-5 text-mid-gray" />
             <div>
               <p className="text-caption font-medium uppercase tracking-caption text-mid-gray">Net Movement</p>
-              <p className="text-xl font-semibold text-ink">{net}</p>
+              <p className="tabular-nums text-xl font-semibold text-ink">{net}</p>
             </div>
           </CardContent>
         </Card>
       </div>
 
       {/* Filters */}
-      <Card>
+      <Card data-print-hide="true">
         <CardContent className="p-4">
           <div className="flex flex-wrap gap-3">
             <Input
@@ -127,15 +132,15 @@ export default function MovementsPage() {
               {MOCK_STORES.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
             </select>
           </div>
+          {dateError && <p className="mt-3 text-sm text-destructive" role="alert">{dateError}</p>}
         </CardContent>
       </Card>
 
       {/* Table */}
       <Card>
         <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
+          {filtered.length === 0 ? <EmptyState icon={<ArrowRightLeft className="h-10 w-10" />} title="No movement records" description="Adjust the filters to see stock activity." /> : <Table>
+            <TableHeader>
                 <TableRow>
                   <TableHead>Date</TableHead>
                   <TableHead>Item</TableHead>
@@ -171,8 +176,7 @@ export default function MovementsPage() {
                   </TableRow>
                 ))}
               </TableBody>
-            </Table>
-          </div>
+            </Table>}
         </CardContent>
       </Card>
     </div>

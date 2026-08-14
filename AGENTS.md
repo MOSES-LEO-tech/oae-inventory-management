@@ -51,7 +51,7 @@ Nothing is deferred. Every tool is available immediately.
 
 ## IDE Rules
 
-Operates under 6 IDE rules. Project rules override global rules.
+Operates under 8 IDE rules. Project rules override global rules.
 
 | Rule | Domain |
 |------|--------|
@@ -61,6 +61,9 @@ Operates under 6 IDE rules. Project rules override global rules.
 | Rule 04 | Design system, accessibility (WCAG 2.1 AA), responsive |
 | Rule 11 | Agent collaboration, delegation, pipelines, quality gates |
 | Rule 13 | MCP operational protocol, error handling, health checks |
+| Rule 14 | Integrated Reasoning Protocol — brainstorming + Sequential Thinking dual-tool pipeline |
+| Rule 15 | Structured Q&A Mandate — AskUserQuestion tool for all agent-to-user questions |
+| Rule 16 | MCP Usage Mandate — MCP tools are the default execution path over Skills/manual methods |
 
 ## Subagent Delegation
 

@@ -13,7 +13,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ArrowLeft, CheckCircle, XCircle } from "lucide-react";
+import { Breadcrumbs } from "@/components/layout/breadcrumbs";
+import { CheckCircle, XCircle } from "lucide-react";
 import { MOCK_TRANSFERS, getStoreName } from "@/lib/mock-data";
 
 const STATUS_BADGES: Record<string, string> = {
@@ -38,11 +39,9 @@ export default function TransferDetailPage() {
   return (
     <div className="space-y-6">
       <div>
-        <Link href="/transfers" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-2">
-          <ArrowLeft className="mr-1 h-4 w-4" /> Back to Transfers
-        </Link>
+        <Breadcrumbs items={[{ label: "Transfers", href: "/transfers" }, { label: "Transfer Details" }]} />
         <h1 className="text-heading-sm font-semibold tracking-heading-sm">Transfer Details</h1>
-        <p className="text-muted-foreground">Transfer request #{transfer.id}</p>
+        <p className="text-body text-mid-gray">Transfer request #{transfer.id}</p>
       </div>
 
       {/* Info Card */}
@@ -96,9 +95,9 @@ export default function TransferDetailPage() {
             <TableBody>
               {transfer.items.map((item, idx) => (
                 <TableRow key={idx}>
-                  <TableCell className="text-sm font-medium">{item.itemName}</TableCell>
-                  <TableCell className="text-right text-sm">{item.qtyPc}</TableCell>
-                  <TableCell className="text-right text-sm">{item.qtyCtn}</TableCell>
+                  <TableCell className="font-medium">{item.itemName}</TableCell>
+                  <TableCell className="text-right tabular-nums">{item.qtyPc}</TableCell>
+                  <TableCell className="text-right tabular-nums">{item.qtyCtn}</TableCell>
                 </TableRow>
               ))}
             </TableBody>

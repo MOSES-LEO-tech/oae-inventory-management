@@ -2,7 +2,8 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
 import {
   Table,
   TableBody,
@@ -15,7 +16,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
   Search,
   Plus,
@@ -23,7 +23,6 @@ import {
   Settings2,
   Package,
   AlertTriangle,
-  Eye,
   Trash2,
 } from "lucide-react";
 import {
@@ -110,75 +109,66 @@ export default function InventoryPage() {
         </div>
       )}
 
-      {/* Search & Filters */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Search by item name or type..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9"
-                aria-label="Search items"
-              />
-            </div>
-            <select
-              value={selectedStoreId ?? ""}
-              onChange={(e) => setSelectedStoreId(e.target.value || null)}
-              className="h-9 rounded-2xl border border-transparent bg-canvas px-3 text-sm outline-none transition-colors focus-visible:border-hairline focus-visible:bg-paper focus-visible:ring-2 focus-visible:ring-hairline/40"
-              aria-label="Filter by store"
-            >
-              <option value="">All Stores</option>
-              {MOCK_STORES.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name}
-                </option>
-              ))}
-            </select>
-            <select
-              value={stockYearFilter}
-              onChange={(e) => setStockYearFilter(e.target.value)}
-              className="h-9 rounded-2xl border border-transparent bg-canvas px-3 text-sm outline-none transition-colors focus-visible:border-hairline focus-visible:bg-paper focus-visible:ring-2 focus-visible:ring-hairline/40"
-              aria-label="Filter by stock year"
-            >
-              <option value="">All Years</option>
-              {stockYearOptions.map((y) => (
-                <option key={y} value={y}>
-                  {y}
-                </option>
-              ))}
-            </select>
-            <label className="flex items-center gap-2 text-sm whitespace-nowrap">
-              <Checkbox
-                checked={showLowStockOnly}
-                onCheckedChange={(v) => setShowLowStockOnly(v === true)}
-              />
-              <AlertTriangle className="h-3.5 w-3.5 text-ink" />
-              Low stock only
-            </label>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Toolbar */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Search by item name or type..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9"
+            aria-label="Search items"
+          />
+        </div>
+        <select
+          value={selectedStoreId ?? ""}
+          onChange={(e) => setSelectedStoreId(e.target.value || null)}
+          className="h-9 rounded-2xl border border-transparent bg-canvas px-3 text-sm outline-none transition-colors focus-visible:border-hairline focus-visible:bg-paper focus-visible:ring-2 focus-visible:ring-hairline/40"
+          aria-label="Filter by store"
+        >
+          <option value="">All Stores</option>
+          {MOCK_STORES.map((s) => (
+            <option key={s.id} value={s.id}>{s.name}</option>
+          ))}
+        </select>
+        <select
+          value={stockYearFilter}
+          onChange={(e) => setStockYearFilter(e.target.value)}
+          className="h-9 rounded-2xl border border-transparent bg-canvas px-3 text-sm outline-none transition-colors focus-visible:border-hairline focus-visible:bg-paper focus-visible:ring-2 focus-visible:ring-hairline/40"
+          aria-label="Filter by stock year"
+        >
+          <option value="">All Years</option>
+          {stockYearOptions.map((y) => (
+            <option key={y} value={y}>{y}</option>
+          ))}
+        </select>
+        <label className="flex items-center gap-2 text-sm whitespace-nowrap">
+          <Checkbox
+            checked={showLowStockOnly}
+            onCheckedChange={(v) => setShowLowStockOnly(v === true)}
+          />
+          <AlertTriangle className="h-3.5 w-3.5 text-ink" />
+          Low stock only
+        </label>
+      </div>
 
       {/* Table */}
       {filtered.length === 0 ? (
         <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <Package className="mb-3 h-10 w-10 text-muted-foreground" />
-            <p className="text-sm text-muted-foreground">No items found.</p>
-            <p className="text-xs text-muted-foreground">
-              Try adjusting your filters or search query.
-            </p>
+          <CardContent className="p-0">
+            <EmptyState
+              icon={<Package className="h-10 w-10" />}
+              title="No items found"
+              description="Try adjusting your filters or search query."
+            />
           </CardContent>
         </Card>
       ) : (
         <Card>
           <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
+            <Table>
+              <TableHeader>
                   <TableRow>
                     <TableHead>Item Name</TableHead>
                     <TableHead>Type</TableHead>
@@ -287,7 +277,6 @@ export default function InventoryPage() {
                   })}
                 </TableBody>
               </Table>
-            </div>
           </CardContent>
         </Card>
       )}

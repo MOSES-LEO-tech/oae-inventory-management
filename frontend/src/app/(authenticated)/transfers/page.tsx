@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -63,62 +64,62 @@ export default function TransfersPage() {
       {/* Transfers Table */}
       {filtered.length === 0 ? (
         <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <ArrowRightLeft className="mb-3 h-10 w-10 text-muted-foreground" />
-            <p className="text-sm text-muted-foreground">No transfers found.</p>
+          <CardContent className="p-0">
+            <EmptyState
+              icon={<ArrowRightLeft className="h-10 w-10" />}
+              title="No transfers found"
+            />
           </CardContent>
         </Card>
       ) : (
         <Card>
           <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Date</TableHead>
-                    <TableHead>From</TableHead>
-                    <TableHead>To</TableHead>
-                    <TableHead className="hidden sm:table-cell">Items</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Date</TableHead>
+                  <TableHead>From</TableHead>
+                  <TableHead>To</TableHead>
+                  <TableHead className="hidden sm:table-cell">Items</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filtered.map((t) => (
+                  <TableRow key={t.id}>
+                    <TableCell>
+                      {new Date(t.createdAt).toLocaleDateString("en-GB", {
+                        day: "2-digit",
+                        month: "short",
+                        year: "numeric",
+                      })}
+                    </TableCell>
+                    <TableCell className="font-medium">
+                      {getStoreName(t.fromStoreId)}
+                    </TableCell>
+                    <TableCell className="font-medium">
+                      {getStoreName(t.toStoreId)}
+                    </TableCell>
+                    <TableCell className="hidden sm:table-cell">
+                      {t.items.map((i) => `${i.itemName} (${i.qtyPc}PC)`).join(", ")}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="secondary" className={`text-xs ${STATUS_COLORS[t.status]}`}>
+                        {t.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Link href={`/transfers/${t.id}`}>
+                        <Button variant="ghost" size="sm">
+                          View <ArrowRight className="ml-1 h-3.5 w-3.5" />
+                        </Button>
+                      </Link>
+                    </TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filtered.map((t) => (
-                    <TableRow key={t.id}>
-                      <TableCell className="text-sm">
-                        {new Date(t.createdAt).toLocaleDateString("en-GB", {
-                          day: "2-digit",
-                          month: "short",
-                          year: "numeric",
-                        })}
-                      </TableCell>
-                      <TableCell className="text-sm font-medium">
-                        {getStoreName(t.fromStoreId)}
-                      </TableCell>
-                      <TableCell className="text-sm font-medium">
-                        {getStoreName(t.toStoreId)}
-                      </TableCell>
-                      <TableCell className="hidden sm:table-cell text-sm">
-                        {t.items.map((i) => `${i.itemName} (${i.qtyPc}PC)`).join(", ")}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="secondary" className={`text-xs ${STATUS_COLORS[t.status]}`}>
-                          {t.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Link href={`/transfers/${t.id}`}>
-                          <Button variant="ghost" size="sm">
-                            View <ArrowRight className="ml-1 h-3.5 w-3.5" />
-                          </Button>
-                        </Link>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                ))}
+              </TableBody>
+            </Table>
           </CardContent>
         </Card>
       )}

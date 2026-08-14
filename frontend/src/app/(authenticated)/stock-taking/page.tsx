@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useMemo, useCallback } from "react";
-import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,7 +26,7 @@ import {
   History,
   ArrowLeft,
 } from "lucide-react";
-import { MOCK_INVENTORY, MOCK_ITEMS, MOCK_STORES, getStoreName, formatCurrency, MockInventoryRow, MockItem } from "@/lib/mock-data";
+import { MOCK_INVENTORY, MOCK_STORES, getStoreName, MockInventoryRow, MockItem } from "@/lib/mock-data";
 import { useAuthStore } from "@/stores/auth-store";
 
 // ── Types ─────────────────────────────────────────────────
@@ -320,29 +319,29 @@ export default function StockTakingPage() {
           <div className="grid gap-3 grid-cols-2 sm:grid-cols-4 lg:grid-cols-6">
             <Card className="py-3 px-4">
               <p className="text-caption font-medium uppercase tracking-caption text-mid-gray">Total Items</p>
-              <p className="text-xl font-semibold">{stats.total}</p>
+              <p className="tabular-nums text-xl font-semibold">{stats.total}</p>
             </Card>
             <Card className="py-3 px-4">
               <p className="text-caption font-medium uppercase tracking-caption text-mid-gray">Counted</p>
-              <p className="text-xl font-semibold">{stats.counted}/{stats.total}</p>
+              <p className="tabular-nums text-xl font-semibold">{stats.counted}/{stats.total}</p>
             </Card>
             <Card className="py-3 px-4">
               <p className="text-caption font-medium uppercase tracking-caption text-mid-gray">Matched</p>
-              <p className="text-xl font-semibold text-primary">{stats.matched}</p>
+              <p className="tabular-nums text-xl font-semibold text-primary">{stats.matched}</p>
             </Card>
             <Card className="py-3 px-4">
               <p className="text-caption font-medium uppercase tracking-caption text-mid-gray">Mismatched</p>
-              <p className="text-xl font-semibold text-destructive">{stats.mismatched}</p>
+              <p className="tabular-nums text-xl font-semibold text-destructive">{stats.mismatched}</p>
             </Card>
             <Card className="py-3 px-4">
               <p className="text-caption font-medium uppercase tracking-caption text-mid-gray">Net Variance</p>
-              <p className={`text-xl font-semibold ${stats.totalVariance > 0 ? "text-primary" : stats.totalVariance < 0 ? "text-destructive" : ""}`}>
+              <p className={`tabular-nums text-xl font-semibold ${stats.totalVariance > 0 ? "text-primary" : stats.totalVariance < 0 ? "text-destructive" : ""}`}>
                 {stats.totalVariance > 0 ? "+" : ""}{stats.totalVariance}
               </p>
             </Card>
             <Card className="py-3 px-4">
               <p className="text-caption font-medium uppercase tracking-caption text-mid-gray">To Remove</p>
-              <p className="text-xl font-semibold">{stats.removed}</p>
+              <p className="tabular-nums text-xl font-semibold">{stats.removed}</p>
             </Card>
           </div>
 
@@ -365,9 +364,8 @@ export default function StockTakingPage() {
           {/* Count Table */}
           <Card>
             <CardContent className="p-0">
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
+              <Table>
+                <TableHeader>
                     <TableRow>
                       <TableHead>Item</TableHead>
                       <TableHead className="hidden sm:table-cell">Type</TableHead>
@@ -452,7 +450,6 @@ export default function StockTakingPage() {
                     })}
                   </TableBody>
                 </Table>
-              </div>
             </CardContent>
           </Card>
 

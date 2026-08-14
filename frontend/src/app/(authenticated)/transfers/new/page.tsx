@@ -7,8 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Plus, Trash2, Save } from "lucide-react";
+import { Breadcrumbs } from "@/components/layout/breadcrumbs";
+import { Plus, Trash2, Save } from "lucide-react";
 import { MOCK_ITEMS, MOCK_STORES } from "@/lib/mock-data";
+import { flattenValidationErrors, transferSchema } from "@/lib/validation";
 
 type TransferRow = { itemId: string; qtyPc: string; qtyCtn: string };
 
@@ -39,7 +41,11 @@ export default function NewTransferPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (fromStore === toStore) { setError("Cannot transfer from same store to same store."); return; }
+    const result = transferSchema.safeParse({ fromStore, toStore, rows });
+    if (!result.success) {
+      setError(Object.values(flattenValidationErrors(result.error))[0] ?? "Complete all transfer fields.");
+      return;
+    }
     setSaving(true);
     setTimeout(() => {
       alert("Transfer requested (dev mode)");
@@ -50,11 +56,9 @@ export default function NewTransferPage() {
   return (
     <div className="space-y-6">
       <div>
-        <Link href="/transfers" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-2">
-          <ArrowLeft className="mr-1 h-4 w-4" /> Back to Transfers
-        </Link>
+        <Breadcrumbs items={[{ label: "Transfers", href: "/transfers" }, { label: "New Transfer" }]} />
         <h1 className="text-heading-sm font-semibold tracking-heading-sm">New Transfer</h1>
-        <p className="text-muted-foreground">Request a stock transfer between stores.</p>
+        <p className="text-body text-mid-gray">Request a stock transfer between stores.</p>
       </div>
 
       <Card>
@@ -78,21 +82,21 @@ export default function NewTransferPage() {
               </div>
             </div>
 
-            {error && <p className="text-sm text-destructive">{error}</p>}
+            {error && <p className="text-sm text-destructive" role="alert" aria-live="polite">{error}</p>}
 
             <div>
               <Label>Items</Label>
               <div className="mt-2 space-y-2">
                 {rows.map((row, idx) => (
                   <div key={idx} className="flex flex-col sm:flex-row gap-2 sm:items-center">
-                    <select value={row.itemId} onChange={(e) => updateRow(idx, "itemId", e.target.value)} className="flex-1 h-9 rounded-2xl border border-transparent bg-canvas px-3 text-sm outline-none transition-colors focus-visible:border-hairline focus-visible:bg-paper focus-visible:ring-2 focus-visible:ring-hairline/40">
+                    <select aria-label={`Item ${idx + 1}`} value={row.itemId} onChange={(e) => updateRow(idx, "itemId", e.target.value)} className="flex-1 h-9 rounded-2xl border border-transparent bg-canvas px-3 text-sm outline-none transition-colors focus-visible:border-hairline focus-visible:bg-paper focus-visible:ring-2 focus-visible:ring-hairline/40">
                       <option value="">Select item...</option>
                       {MOCK_ITEMS.map((i) => <option key={i.id} value={i.id}>{i.name} ({i.type})</option>)}
                     </select>
-                    <Input type="number" min={0} value={row.qtyPc} onChange={(e) => updateRow(idx, "qtyPc", e.target.value)} placeholder="PC" className="w-24" />
-                    <Input type="number" min={0} value={row.qtyCtn} onChange={(e) => updateRow(idx, "qtyCtn", e.target.value)} placeholder="CTN" className="w-24" />
+                    <Input aria-label={`Item ${idx + 1} pieces`} type="number" min={0} value={row.qtyPc} onChange={(e) => updateRow(idx, "qtyPc", e.target.value)} placeholder="PC" className="w-24 tabular-nums" />
+                    <Input aria-label={`Item ${idx + 1} cartons`} type="number" min={0} value={row.qtyCtn} onChange={(e) => updateRow(idx, "qtyCtn", e.target.value)} placeholder="CTN" className="w-24 tabular-nums" />
                     {rows.length > 1 && (
-                      <Button type="button" variant="ghost" size="icon" onClick={() => removeRow(idx)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                      <Button type="button" variant="ghost" size="icon" aria-label={`Remove item ${idx + 1}`} onClick={() => removeRow(idx)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                     )}
                   </div>
                 ))}
