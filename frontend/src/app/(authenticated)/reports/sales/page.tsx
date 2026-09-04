@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -12,37 +12,118 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ArrowLeft, DollarSign, ShoppingBag, Hash, TrendingUp } from "lucide-react";
-import { MOCK_SALES, MOCK_STORES, formatCurrency, getStoreName } from "@/lib/mock-data";
-import { useUIStore } from "@/stores/ui-store";
+import { ArrowLeft, DollarSign, ShoppingBag, Hash, TrendingUp, Loader2, Download } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useInventoryStore } from "@/stores/inventory-store";
+import { usePageStoreSelection } from "@/stores/ui-store";
+import { useAuthStore } from "@/stores/auth-store";
+import { toast } from "sonner";
+import {
+  resolveReportFacilityInfo,
+  generateSalesSummaryPdf,
+  type ReportContext,
+} from "@/lib/reports/pdf";
+import { getQuantityTypeLabel, mergeQuantityTypes } from "@/lib/qty-label";
 
 export default function SalesReportPage() {
-  const { selectedStoreId, setSelectedStoreId } = useUIStore();
+  const { selectedStoreId, setSelectedStoreId } = usePageStoreSelection("reports-sales");
+  const { sales, stores, items, inventoryItems: itemCatalog, fetchSales, fetchItems, fetchStores, fetchFacilitySettings, facilitySettings, isLoading } = useInventoryStore();
+  const { user, canAccessStore } = useAuthStore();
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const [isExporting, setIsExporting] = useState(false);
+
+  // Store switcher is a Main-store-only feature; secondary stores switch
+  // stores exclusively on the Inventory page.
+  const isMainStoreUser = useMemo(
+    () => stores.some((s) => s.type === "main" && canAccessStore(s.id)),
+    [stores, canAccessStore]
+  );
+
+  useEffect(() => {
+    fetchSales();
+    fetchItems();
+    fetchStores();
+    fetchFacilitySettings();
+  }, []);
 
   const filtered = useMemo(() => {
-    let rows = MOCK_SALES;
+    let rows = sales.filter(s => s.type === "SALE");
     if (selectedStoreId) rows = rows.filter((s) => s.storeId === selectedStoreId);
-    if (dateFrom) rows = rows.filter((s) => s.createdAt >= dateFrom);
-    if (dateTo) rows = rows.filter((s) => s.createdAt <= dateTo + "T23:59:59Z");
-    return rows.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  }, [selectedStoreId, dateFrom, dateTo]);
+    if (dateFrom) rows = rows.filter((s) => s.createdAt.toDate() >= new Date(dateFrom));
+    if (dateTo) rows = rows.filter((s) => s.createdAt.toDate() <= new Date(dateTo + "T23:59:59Z"));
+    return rows.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
+  }, [sales, selectedStoreId, dateFrom, dateTo]);
 
   const totalRevenue = filtered.reduce((s, sale) => s + sale.totalAmount, 0);
   const totalItemsSold = filtered.reduce(
-    (s, sale) => s + sale.items.reduce((si, item) => si + item.qtyPc, 0),
+    (s, sale) => s + sale.items.reduce((si, item) => si + Object.values(item.quantities ?? {}).reduce((a, b) => a + b, 0), 0),
     0
   );
   const avgSale = filtered.length > 0 ? totalRevenue / filtered.length : 0;
 
+  const getStoreName = (storeId: string) => {
+    return stores.find((s) => s.id === storeId)?.name || storeId;
+  };
+
+  const currency = facilitySettings?.currency ?? "UGX";
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat("en-UG", { style: "currency", currency }).format(amount);
+  };
+
+  const formatDateParam = (value: string) =>
+    value ? new Date(value).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }) : "Start";
+
+  const handleExportPdf = async () => {
+    if (!user) return;
+    setIsExporting(true);
+    try {
+      const info = await resolveReportFacilityInfo(user.facilityId);
+      const ctx: ReportContext = {
+        facilityName: info.name,
+        currency: info.currency,
+        generatedBy: user.name,
+      };
+      await generateSalesSummaryPdf(ctx, {
+        fileName: `sales-summary-${new Date().toISOString().slice(0, 10)}.pdf`,
+        periodLine: `${formatDateParam(dateFrom)} – ${dateTo ? formatDateParam(dateTo) : "Present"} · ${selectedStoreId ? getStoreName(selectedStoreId) : "All Stores"}`,
+        summary: {
+          revenue: totalRevenue,
+          itemsSold: totalItemsSold,
+          salesCount: filtered.length,
+          avgSale,
+        },
+        records: filtered.map((sale) => ({
+          date: sale.createdAt.toDate(),
+          store: getStoreName(sale.storeId),
+          lines: sale.items.length,
+          qty: sale.items.reduce((s, i) => s + Object.values(i.quantities ?? {}).reduce((a, b) => a + b, 0), 0),
+          total: sale.totalAmount,
+        })),
+        breakdown: itemBreakdown.map((b) => ({ 
+          item: b.name, 
+          qty: Object.values(b.quantities ?? {}).reduce((a, b) => a + b, 0), 
+          revenue: b.revenue 
+        })),
+      });
+      toast.success("Sales report downloaded");
+    } catch (err) {
+      console.error("[Reports] Sales PDF export failed:", err);
+      toast.error("Could not generate the PDF report");
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   // Group by item
   const itemBreakdown = useMemo(() => {
-    const map = new Map<string, { qtyPc: number; revenue: number }>();
+    const map = new Map<string, { itemId: string; quantities: Record<string, number>; revenue: number }>();
     filtered.forEach((sale) => {
       sale.items.forEach((item) => {
-        const existing = map.get(item.itemName) ?? { qtyPc: 0, revenue: 0 };
-        existing.qtyPc += item.qtyPc;
+        const existing = map.get(item.itemName) ?? { itemId: item.itemId, quantities: {}, revenue: 0 };
+        Object.entries(item.quantities ?? {}).forEach(([key, val]) => {
+          existing.quantities[key] = (existing.quantities[key] || 0) + val;
+        });
         existing.revenue += item.subtotal;
         map.set(item.itemName, existing);
       });
@@ -52,29 +133,46 @@ export default function SalesReportPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <Link href="/reports" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-2">
-          <ArrowLeft className="mr-1 h-4 w-4" /> Back to Reports
-        </Link>
-        <h1 className="text-heading-sm font-semibold tracking-heading-sm">Sales Summary</h1>
-        <p className="text-muted-foreground">Sales by store, item, and date range.</p>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <Link href="/reports" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-2">
+            <ArrowLeft className="mr-1 h-4 w-4" /> Back to Reports
+          </Link>
+          <p className="text-muted-foreground">Sales by store, item, and date range.</p>
+        </div>
+        <Button onClick={handleExportPdf} disabled={isExporting || filtered.length === 0}>
+          {isExporting ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <Download className="mr-2 h-4 w-4" />
+          )}
+          Export PDF
+        </Button>
       </div>
 
       {/* Filters */}
       <Card>
         <CardContent className="p-4">
-          <div className="flex flex-wrap gap-3">
-            <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="w-40" aria-label="Date from" />
-            <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="w-40" aria-label="Date to" />
-            <select
-              value={selectedStoreId ?? ""}
-              onChange={(e) => setSelectedStoreId(e.target.value || null)}
-              className="h-9 rounded-2xl border border-transparent bg-canvas px-3 text-sm outline-none transition-colors focus-visible:border-hairline focus-visible:bg-paper focus-visible:ring-2 focus-visible:ring-hairline/40"
-              aria-label="Filter by store"
-            >
-              <option value="">All Stores</option>
-              {MOCK_STORES.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-            </select>
+          <div className="flex flex-wrap gap-3 items-end">
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">From</label>
+              <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="w-40" aria-label="Date from" />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">To</label>
+              <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="w-40" aria-label="Date to" />
+            </div>
+            {isMainStoreUser && (
+              <select
+                value={selectedStoreId ?? ""}
+                onChange={(e) => setSelectedStoreId(e.target.value || null)}
+                className="h-9 rounded-2xl border border-transparent bg-canvas px-3 text-sm outline-none transition-colors focus-visible:border-hairline focus-visible:bg-paper focus-visible:ring-2 focus-visible:ring-hairline/40"
+                aria-label="Filter by store"
+              >
+                <option value="">All Stores</option>
+                {stores.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+              </select>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -129,33 +227,62 @@ export default function SalesReportPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Store</TableHead>
-                  <TableHead className="hidden sm:table-cell">Items</TableHead>
-                  <TableHead className="text-right">Qty</TableHead>
-                  <TableHead className="text-right">Total</TableHead>
+                  <TableHead className="text-center">Date</TableHead>
+                  <TableHead className="text-center">Store</TableHead>
+                  <TableHead className="hidden sm:table-cell text-center">Items</TableHead>
+                  <TableHead className="text-center">Qty</TableHead>
+                  <TableHead className="text-center">Total</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filtered.map((sale) => (
-                  <TableRow key={sale.id}>
-                    <TableCell className="text-sm">
-                      {new Date(sale.createdAt).toLocaleDateString("en-GB", {
-                        day: "2-digit",
-                        month: "short",
-                        year: "numeric",
-                      })}
+                {isLoading ? (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center py-8">
+                      <Loader2 className="h-6 w-6 animate-spin mx-auto" />
+                      <p className="text-sm text-muted-foreground mt-2">Loading...</p>
                     </TableCell>
-                    <TableCell className="text-sm">{getStoreName(sale.storeId)}</TableCell>
-                    <TableCell className="hidden sm:table-cell text-sm">
-                      {sale.items.map((i) => i.itemName).join(", ")}
-                    </TableCell>
-                    <TableCell className="text-right text-sm">
-                      {sale.items.reduce((s, i) => s + i.qtyPc, 0)}PC
-                    </TableCell>
-                    <TableCell className="text-right text-sm font-medium">{formatCurrency(sale.totalAmount)}</TableCell>
                   </TableRow>
-                ))}
+                ) : filtered.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center py-8 text-sm text-muted-foreground">
+                      No sales found for the selected period
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filtered.map((sale) => {
+                    const totalQty = sale.items.reduce((s, i) => s + Object.values(i.quantities ?? {}).reduce((a, b) => a + b, 0), 0);
+                    const qtyBreakdown = sale.items
+                      .flatMap((i) => {
+                        // Sale lines may be keyed against ids from either
+                        // the catalog's or the row's quantity-type copies.
+                        const qts = mergeQuantityTypes(
+                          itemCatalog.find((c) => c.id === i.itemId)?.quantityTypes,
+                          items.find((r) => r.itemId === i.itemId)?.quantityTypes
+                        );
+                        return Object.entries(i.quantities ?? {}).map(([key, val]) => `${val} ${getQuantityTypeLabel(qts, key)}`);
+                      })
+                      .join(" / ");
+                    return (
+                      <TableRow key={sale.id}>
+                        <TableCell className="text-center text-sm">
+                          {sale.createdAt.toDate().toLocaleDateString("en-GB", {
+                            day: "2-digit",
+                            month: "short",
+                            year: "numeric",
+                          })}
+                        </TableCell>
+                        <TableCell className="text-center text-sm">{getStoreName(sale.storeId)}</TableCell>
+                        <TableCell className="hidden sm:table-cell text-center text-sm">
+                          {sale.items.map((i) => i.itemName).join(", ")}
+                        </TableCell>
+                        <TableCell className="text-center text-sm tabular-nums">
+                          {qtyBreakdown || totalQty}
+                        </TableCell>
+                        <TableCell className="text-center text-sm font-medium tabular-nums">{formatCurrency(sale.totalAmount)}</TableCell>
+                      </TableRow>
+                    );
+                  })
+                )}
               </TableBody>
             </Table>
           </div>
@@ -173,19 +300,30 @@ export default function SalesReportPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Item</TableHead>
-                    <TableHead className="text-right">Qty Sold</TableHead>
-                    <TableHead className="text-right">Revenue</TableHead>
+                    <TableHead className="text-center">Item</TableHead>
+                    <TableHead className="text-center">Qty Sold</TableHead>
+                    <TableHead className="text-center">Revenue</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {itemBreakdown.map((item) => (
-                    <TableRow key={item.name}>
-                      <TableCell className="text-sm font-medium">{item.name}</TableCell>
-                      <TableCell className="text-right text-sm">{item.qtyPc}PC</TableCell>
-                      <TableCell className="text-right text-sm font-medium">{formatCurrency(item.revenue)}</TableCell>
-                    </TableRow>
-                  ))}
+                  {itemBreakdown.map((item) => {
+                    // Prefer id lookup; fall back to name for older
+                    // breakdowns recorded before itemId was tracked.
+                    const qts = mergeQuantityTypes(
+                      itemCatalog.find((c) => c.id === item.itemId)?.quantityTypes ??
+                        itemCatalog.find((c) => c.name === item.name)?.quantityTypes,
+                      items.find((r) => r.itemId === item.itemId)?.quantityTypes
+                    );
+                    const qtyBreakdown = Object.entries(item.quantities ?? {}).map(([key, val]) => `${val} ${getQuantityTypeLabel(qts, key)}`).join(" / ");
+                    const totalQty = Object.values(item.quantities ?? {}).reduce((a, b) => a + b, 0);
+                    return (
+                      <TableRow key={item.name}>
+                        <TableCell className="text-center text-sm font-medium">{item.name}</TableCell>
+                        <TableCell className="text-center text-sm tabular-nums">{qtyBreakdown || totalQty}</TableCell>
+                        <TableCell className="text-center text-sm font-medium tabular-nums">{formatCurrency(item.revenue)}</TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </div>

@@ -1,0 +1,208 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ── Helpers ─────────────────────────────────────────────
+    function isAuth() { return request.auth != null; }
+    
+    function isSuperAdmin() {
+      return isAuth() && (
+        request.auth.token.isSuperAdmin == true ||
+        exists(/databases/$(database)/documents/superAdmin/$(request.auth.uid))
+      );
+    }
+    
+    function getUserFacilityId() {
+      return get(/databases/$(database)/documents/user-lookup/$(request.auth.uid)).data.facilityId;
+    }
+    
+    function getUserRole() {
+      return get(/databases/$(database)/documents/user-lookup/$(request.auth.uid)).data.role;
+    }
+    
+    // NOTE (Medicore parity): authorization deliberately reads ONLY the
+    // user-lookup doc. The previous design additionally get()'d
+    // facilities/{fid}/users/{uid} inside rule evaluation to check duties;
+    // any miss/error in that chained lookup denied legitimate writes with
+    // "Missing or insufficient permissions". Medicore hit this exact bug and
+    // removed document-read gating ("The previous get()-based evaluation
+    // caused Missing or insufficient permissions denials"). Duty checks stay
+    // enforced by the app UI; rules enforce tenancy + lock state only.
+    
+    function isFacilityMember(facilityId) {
+      return isAuth() && getUserFacilityId() == facilityId;
+    }
+    
+    function isFacilityAdmin(facilityId) {
+      return isFacilityMember(facilityId) && getUserRole() == "admin";
+    }
+    
+    // licenseLock is INERT here: this app has no server / Admin SDK, so no
+    // code path can mint or clear custom claims. A stale licenseLocked=true
+    // claim on any account would otherwise deny ALL writes forever while
+    // reads kept working (observed production symptom). Same lesson Medicore
+    // learned: claim-gated rules without a claim-management server lock
+    // users out; re-enable only together with an Admin SDK sync endpoint.
+    function isFacilityLocked(facilityId) {
+      return false;
+    }
+    
+    // ── SuperAdmin Collections ──────────────────────────────
+    match /superAdmin/{uid} {
+      allow read, write: if isSuperAdmin();
+    }
+    
+    match /user-lookup/{uid} {
+      allow read: if isAuth() && (request.auth.uid == uid || isSuperAdmin());
+      allow create: if isAuth();
+      allow update, delete: if isSuperAdmin();
+    }
+    
+    // ── Facility Collections ────────────────────────────────
+    match /facilities/{facilityId} {
+      allow read: if isSuperAdmin() || isFacilityMember(facilityId);
+      allow create: if isAuth();
+      allow update: if isSuperAdmin() || (isFacilityAdmin(facilityId) && !isFacilityLocked(facilityId));
+      allow delete: if isSuperAdmin();
+      
+      // Users subcollection
+      match /users/{uid} {
+        allow read: if isSuperAdmin() || isFacilityMember(facilityId);
+        // create is isAuth() because onboarding commits facility + admin user +
+        // user-lookup in one batch; rules evaluate against PRE-batch data, so
+        // isFacilityAdmin() would always deny the first write.
+        allow create: if isAuth();
+        // Profile self-service: a member may update ONLY their own doc and
+        // ONLY cosmetic fields — never role/duties/storeIds (anti-escalation).
+        allow update: if isSuperAdmin()
+          || (isFacilityAdmin(facilityId) && !isFacilityLocked(facilityId))
+          || (isFacilityMember(facilityId) && request.auth.uid == uid && !isFacilityLocked(facilityId)
+              && request.resource.data.diff(resource.data).affectedKeys()
+                   .hasOnly(['name', 'phone', 'updatedAt']));
+        // Invite-migration cleanup: a signer-in may remove the placeholder
+        // row pre-created under a local UUID when it carries their own email
+        // (case-insensitive — same casing rule as the CG read above).
+        allow delete: if isSuperAdmin()
+          || (isFacilityAdmin(facilityId) && !isFacilityLocked(facilityId))
+          || (isAuth() && resource.data.email == request.auth.token.email.lower());
+      }
+      
+      // Items
+      match /items/{itemId} {
+        allow read: if isSuperAdmin() || isFacilityMember(facilityId);
+        allow create, update, delete: if isSuperAdmin() || (isFacilityMember(facilityId) && !isFacilityLocked(facilityId));
+      }
+      
+      // Inventory
+      match /inventory/{inventoryId} {
+        allow read: if isSuperAdmin() || isFacilityMember(facilityId);
+        // create/update/delete covers stock rows written by adjust, stock-in,
+        // stock-out and the ConfirmDialog stock-row removal flow.
+        allow create, update, delete: if isSuperAdmin() || (isFacilityMember(facilityId) && !isFacilityLocked(facilityId));
+      }
+      
+      // Stores
+      match /stores/{storeId} {
+        allow read: if isSuperAdmin() || isFacilityMember(facilityId);
+        allow create, update: if isSuperAdmin() || (isFacilityMember(facilityId) && !isFacilityLocked(facilityId));
+        allow delete: if isSuperAdmin();
+      }
+      
+      // Transactions
+      match /transactions/{transactionId} {
+        allow read: if isSuperAdmin() || isFacilityMember(facilityId);
+        allow create, update: if isSuperAdmin() || (isFacilityMember(facilityId) && !isFacilityLocked(facilityId));
+        allow delete: if isSuperAdmin();
+      }
+      
+      // Transfers
+      match /transfers/{transferId} {
+        allow read: if isSuperAdmin() || isFacilityMember(facilityId);
+        // create = request; update covers completeTransfer/cancelTransfer,
+        // which commit ONE atomic batch across transfers + inventory +
+        // stockMovements — membership must pass for every doc in the batch.
+        allow create, update: if isSuperAdmin() || (isFacilityMember(facilityId) && !isFacilityLocked(facilityId));
+        allow delete: if isSuperAdmin();
+      }
+      
+      // Stock Takes
+      match /stock-takes/{stockTakeId} {
+        allow read: if isSuperAdmin() || isFacilityMember(facilityId);
+        allow create, update: if isSuperAdmin() || (isFacilityMember(facilityId) && !isFacilityLocked(facilityId));
+        allow delete: if isSuperAdmin();
+      }
+      
+      // Stock Takes — ACTUAL collection name used by app code (camelCase)
+      match /stockTakes/{stockTakeId} {
+        allow read: if isSuperAdmin() || isFacilityMember(facilityId);
+        allow create, update: if isSuperAdmin() || (isFacilityMember(facilityId) && !isFacilityLocked(facilityId));
+        allow delete: if isSuperAdmin();
+      }
+      
+      // Stock Movements — append-only audit trail written by stock-in,
+      // stock-out, adjustments, transfers and stock takes. Medicore parity:
+      // any member may create; updates/deletes stay super-admin only.
+      match /stockMovements/{movementId} {
+        allow read: if isSuperAdmin() || isFacilityMember(facilityId);
+        allow create: if isSuperAdmin() || (isFacilityMember(facilityId) && !isFacilityLocked(facilityId));
+        allow update, delete: if isSuperAdmin();
+      }
+      
+      // Licenses
+      match /licenses/{licenseId} {
+        allow read: if isSuperAdmin() || isFacilityMember(facilityId);
+        allow write: if isSuperAdmin();
+      }
+      
+      // Invoices
+      match /invoices/{invoiceId} {
+        allow read: if isSuperAdmin() || isFacilityMember(facilityId);
+        allow write: if isSuperAdmin();
+      }
+    }
+    
+    // ── Trial Licenses (top-level, keyed by facilityId) ─────
+    match /licenses/{facilityId} {
+      allow read: if isSuperAdmin() || isFacilityMember(facilityId);
+      allow create: if isAuth();
+      allow update: if isSuperAdmin() || isFacilityAdmin(facilityId);
+      allow delete: if isSuperAdmin();
+    }
+    
+    // ── Collection Group: Users (staff invitation discovery) ──
+    // Lets a freshly-authenticated invitee resolve their pre-created
+    // membership record across facilities by matching their own email
+    // (auth.ts resolveUserSession Tier 4). Comparison is case-insensitive:
+    // token.email carries the invitee's typed casing while placeholder docs
+    // store the lowercased email.
+    match /{path=**}/users/{docId} {
+      allow read: if isAuth() && (
+        resource.data.email == request.auth.token.email.lower() ||
+        isSuperAdmin()
+      );
+    }
+
+    // ── Invite Index (email-keyed staff invitations) ──────────
+    // invite-index/{lowercasedEmail} is written atomically with the facility
+    // placeholder at invite time and consumed at the invitee's first
+    // sign-in (auth.ts Tier 4). Deterministic ID → no query, no index,
+    // nothing to deny. Re-invites overwrite; invitee consumes on sign-in.
+    match /invite-index/{emailKey} {
+      // Only the invitee themselves (case-insensitive) or a super admin
+      // may read an invitation.
+      allow read: if isAuth() && (
+        request.auth.token.email.lower() == emailKey || isSuperAdmin()
+      );
+      // Facility members (tenant admins) issue invites for their facility.
+      allow create, update: if isSuperAdmin()
+        || (isFacilityMember(request.resource.data.facilityId)
+            && !isFacilityLocked(request.resource.data.facilityId));
+      // The invitee consumes their own invite on first sign-in; admins may
+      // cancel an invite for their facility; super admins unrestricted.
+      allow delete: if isSuperAdmin()
+        || (isAuth() && request.auth.token.email.lower() == emailKey)
+        || (isFacilityMember(resource.data.facilityId)
+            && !isFacilityLocked(resource.data.facilityId));
+    }
+  }
+}

@@ -3,8 +3,9 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/layout/theme-provider";
 import { AuthProvider } from "@/components/auth/auth-provider";
+import { SWRegistration } from "@/components/pwa/sw-registration";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { Toaster } from "@/components/ui/toast";
+import { Toaster } from "sonner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -21,8 +22,8 @@ export const metadata: Metadata = {
   description: "Stationery inventory and sales management system for OAE stores.",
   manifest: "/manifest.json",
   icons: {
-    icon: "/logo-oat.svg",
-    apple: "/logo-oat.svg",
+    icon: "/logo-update.png",
+    apple: "/logo-update.png",
   },
   appleWebApp: {
     capable: true,
@@ -55,8 +56,11 @@ export default function RootLayout({
         <ThemeProvider>
           <AuthProvider>
             <TooltipProvider delay={300}>
+              <SWRegistration />
               {children}
-              <Toaster />
+              {/* Sonner is the single toast system (Medicore principle: one global
+                  notification provider at root); richColors = success/error variants */}
+              <Toaster richColors closeButton />
             </TooltipProvider>
           </AuthProvider>
         </ThemeProvider>

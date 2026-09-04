@@ -1,40 +1,36 @@
 "use client";
 
 import Link from "next/link";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DollarSign, History, AlertTriangle, TrendingUp, Clock, ArrowRight } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
 
 const reports = [
-  { title: "Stock Valuation", desc: "Total value of stock per item and store.", icon: DollarSign, href: "/reports/valuation" },
-  { title: "Movement History", desc: "All stock in, out, and transfer records.", icon: History, href: "/reports/movements" },
-  { title: "Low Stock Report", desc: "Items below their configured threshold.", icon: AlertTriangle, href: "/reports/low-stock" },
-  { title: "Sales Summary", desc: "Sales by store, item, and date range.", icon: TrendingUp, href: "/reports/sales" },
-  { title: "Stock Aging", desc: "Stock grouped by year and category.", icon: Clock, href: "/reports/aging" },
+  { title: "Stock Valuation", desc: "Total value of stock per item and store.", href: "/reports/valuation" },
+  { title: "Movement History", desc: "All stock in, out, and transfer records.", href: "/reports/movements" },
+  { title: "Profits", desc: "Profit per sale across any date range.", href: "/reports/profits" },
+  { title: "Low Stock Report", desc: "Items below their configured threshold.", href: "/reports/low-stock" },
+  { title: "Sales Summary", desc: "Sales by store, item, and date range.", href: "/reports/sales" },
+  { title: "Stock Aging", desc: "Stock grouped by year and category.", href: "/reports/aging" },
 ];
 
 export default function ReportsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-heading-sm font-semibold tracking-heading-sm">Reports</h1>
         <p className="text-body text-mid-gray">View and analyze inventory data.</p>
       </div>
+
+      {/* Editorial report index — typographic hierarchy only, no iconography */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {reports.map((r) => (
-          <Link key={r.title} href={r.href}>
-            <Card className="cursor-pointer h-full transition-shadow hover:shadow-subtle-2">
-              <CardHeader>
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-canvas">
-                    <r.icon className="h-5 w-5 text-ink" />
-                  </div>
-                  <CardTitle className="text-base">{r.title}</CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-mid-gray">{r.desc}</p>
-                <p className="mt-3 flex items-center text-sm font-medium text-ink">
-                  View Report <ArrowRight className="ml-1 h-3.5 w-3.5" />
+          <Link key={r.title} href={r.href} className="group block h-full focus-visible:outline-none">
+            <Card className="h-full cursor-pointer border-hairline bg-paper transition-all duration-200 group-focus-visible:border-ink/30 group-hover:-translate-y-0.5 group-hover:border-ink/20 group-hover:shadow-subtle-2">
+              <CardContent className="flex h-full flex-col p-6">
+                <h2 className="font-heading text-lg font-semibold tracking-tight text-ink">
+                  {r.title}
+                </h2>
+                <p className="mt-2 flex-1 text-sm leading-relaxed text-mid-gray">{r.desc}</p>
+                <p className="mt-6 self-start border-b border-transparent pb-0.5 text-xs font-medium uppercase tracking-[0.18em] text-ink transition-colors group-focus-visible:border-ink group-hover:border-ink">
+                  View Report
                 </p>
               </CardContent>
             </Card>

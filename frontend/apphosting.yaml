@@ -1,0 +1,48 @@
+# Settings for the Cloud Run service that runs this Next.js app.
+runConfig:
+  minInstances: 0
+  maxInstances: 100
+  concurrency: 80
+  cpu: 1
+  memoryMiB: 512
+
+# Environment variables.
+# NEXT_PUBLIC_* values are inlined at build time by Next.js, so they must be
+# available during BUILD (and RUNTIME keeps them consistent for SSR).
+# These are public Firebase web credentials (by design), so plain values are fine.
+env:
+  - variable: NEXT_PUBLIC_FIREBASE_API_KEY
+    value: "AIzaSyC0ASvGRB6o3rGqwUaQhPz1U5WBt_aiLPU"
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+    value: "inventory-master-ddc8c.firebaseapp.com"
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: NEXT_PUBLIC_FIREBASE_PROJECT_ID
+    value: "inventory-master-ddc8c"
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+    value: "inventory-master-ddc8c.firebasestorage.app"
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+    value: "1094776140179"
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: NEXT_PUBLIC_FIREBASE_APP_ID
+    value: "1:1094776140179:web:7eda769ec11c05215d7866"
+    availability:
+      - BUILD
+      - RUNTIME

@@ -4,6 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/auth-store";
+import { hasRouteAccess } from "@/lib/permissions";
+import { LOGO_DATA_URL } from "@/lib/logo-data";
 import {
   LayoutDashboard,
   Package,
@@ -11,9 +13,10 @@ import {
   ArrowUpFromLine,
   ArrowRightLeft,
   BarChart3,
+  Users,
+  Activity,
   Settings,
   X,
-  ClipboardList,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -28,59 +31,29 @@ interface NavItem {
   href: string;
   label: string;
   icon: React.ReactNode;
-  requiresRoles?: string[];
 }
 
+// Visibility is gated by the user's Firestore duties via the same
+// hasRouteAccess rules the RoleGuard enforces — nav always matches page access.
 const navItems: NavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: <LayoutDashboard className="h-5 w-5" /> },
   { href: "/inventory", label: "Inventory", icon: <Package className="h-5 w-5" /> },
-  {
-    href: "/stock-taking",
-    label: "Stock Taking",
-    icon: <ClipboardList className="h-5 w-5" />,
-    requiresRoles: ["admin", "manager"],
-  },
-  {
-    href: "/stock-in",
-    label: "Stock In",
-    icon: <ArrowDownToLine className="h-5 w-5" />,
-    requiresRoles: ["admin", "manager"],
-  },
-  {
-    href: "/stock-out",
-    label: "Stock Out",
-    icon: <ArrowUpFromLine className="h-5 w-5" />,
-  },
-  {
-    href: "/transfers",
-    label: "Transfers",
-    icon: <ArrowRightLeft className="h-5 w-5" />,
-    requiresRoles: ["admin", "manager"],
-  },
-  {
-    href: "/reports",
-    label: "Reports",
-    icon: <BarChart3 className="h-5 w-5" />,
-    requiresRoles: ["admin", "manager"],
-  },
-  {
-    href: "/settings",
-    label: "Settings",
-    icon: <Settings className="h-5 w-5" />,
-    requiresRoles: ["admin"],
-  },
+  { href: "/stock-in", label: "Stock In", icon: <ArrowDownToLine className="h-5 w-5" /> },
+  { href: "/stock-out", label: "Stock Out", icon: <ArrowUpFromLine className="h-5 w-5" /> },
+  { href: "/transfers", label: "Transfers", icon: <ArrowRightLeft className="h-5 w-5" /> },
+  { href: "/reports", label: "Reports", icon: <BarChart3 className="h-5 w-5" /> },
+  { href: "/staff", label: "Staff", icon: <Users className="h-5 w-5" /> },
+  { href: "/staff-activity", label: "Staff Activity", icon: <Activity className="h-5 w-5" /> },
+  { href: "/settings", label: "Settings", icon: <Settings className="h-5 w-5" /> },
 ];
 
 export function Sidebar({ open, onClose }: SidebarProps) {
   const pathname = usePathname();
-  const { user, isAdmin, isManager } = useAuthStore();
+  const { user } = useAuthStore();
 
-  const userRole = user?.role;
-
-  const filteredItems = navItems.filter((item) => {
-    if (!item.requiresRoles) return true;
-    return userRole && item.requiresRoles.includes(userRole);
-  });
+  const filteredItems = navItems.filter((item) =>
+    user ? hasRouteAccess(item.href, user.duties) : false
+  );
 
   return (
     <>
@@ -101,8 +74,9 @@ export function Sidebar({ open, onClose }: SidebarProps) {
       >
         {/* Logo */}
         <div className="flex h-16 items-center gap-2 border-b border-hairline px-6">
+          {/* Base64 inline — renders fully offline */}
           <img
-            src="/logo-oat.svg"
+            src={LOGO_DATA_URL}
             alt="OAE Logo"
             className="h-8 w-auto"
           />
@@ -144,19 +118,21 @@ export function Sidebar({ open, onClose }: SidebarProps) {
 
         <Separator />
 
-        {/* User info */}
+        {/* User info — links to the Profile page */}
         {user && (
-          <div className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-canvas text-sm font-medium text-ink">
-                {user.name.charAt(0).toUpperCase()}
-              </div>
-              <div className="flex-1 truncate">
-                <p className="truncate text-sm font-medium">{user.name}</p>
-                <p className="truncate text-xs text-mid-gray capitalize">{user.role}</p>
-              </div>
+          <Link
+            href="/profile"
+            onClick={onClose}
+            className="flex items-center gap-3 rounded-2xl p-4 transition-colors hover:bg-canvas"
+          >
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-canvas text-sm font-medium text-ink">
+              {user.name.charAt(0).toUpperCase()}
             </div>
-          </div>
+            <div className="min-w-0 flex-1 truncate">
+              <p className="truncate text-sm font-medium">{user.name}</p>
+              <p className="truncate text-xs text-mid-gray capitalize">{user.role}</p>
+            </div>
+          </Link>
         )}
       </aside>
     </>

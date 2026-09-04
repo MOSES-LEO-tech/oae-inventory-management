@@ -43,3 +43,9 @@ next-env.d.ts
 
 # OS
 Thumbs.db
+
+# hermes workspace
+.hermes/
+# firebase caches
+.firebase/
+.firebaserc

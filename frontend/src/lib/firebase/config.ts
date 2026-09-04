@@ -1,8 +1,10 @@
 import { initializeApp, getApps, FirebaseApp } from "firebase/app";
 import { getAuth, Auth } from "firebase/auth";
 import {
-  getFirestore,
-  enableIndexedDbPersistence,
+  initializeFirestore,
+  persistentLocalCache,
+  persistentSingleTabManager,
+  memoryLocalCache,
   Firestore,
 } from "firebase/firestore";
 
@@ -37,19 +39,20 @@ export function getFirebaseAuth(): Auth {
 
 export function getFirebaseDb(): Firestore {
   if (!db) {
-    db = getFirestore(getFirebaseApp());
-    // Enable offline persistence
-    if (typeof window !== "undefined") {
-      enableIndexedDbPersistence(db).catch((err) => {
-        if (err.code === "failed-precondition") {
-          // Multiple tabs open — persistence only works in one tab
-          console.warn("Firestore persistence failed: multiple tabs open");
-        } else if (err.code === "unimplemented") {
-          // Browser doesn't support IndexedDB
-          console.warn("Firestore persistence not supported in this browser");
-        }
-      });
-    }
+    // initializeFirestore is required for custom settings in firebase v12 —
+    // passing settings to getFirestore() misparses them as a database ID.
+    // Browser: single-tab IndexedDB persistence keeps the app offline-first.
+    // Node/prerender: memory cache (IndexedDB does not exist there).
+    // Signatures verified against @firebase/firestore index.d.ts (v12.17).
+    db = initializeFirestore(getFirebaseApp(), {
+      localCache:
+        typeof window !== "undefined"
+          ? persistentLocalCache({
+              cacheSizeBytes: 50 * 1024 * 1024, // 50MB
+              tabManager: persistentSingleTabManager({ forceOwnership: false }),
+            })
+          : memoryLocalCache(),
+    });
   }
   return db;
 }

@@ -1,0 +1,23 @@
+import type { ItemCategory } from "@/types";
+
+// Canonical category list for item catalog forms — keeps every write path
+// producing valid ItemCategory values.
+export const ITEM_CATEGORIES: ItemCategory[] = [
+  "PENS", "PENCILS", "MARKERS", "HIGHLIGHTERS", "NOTEBOOKS", "EXERCISE_BOOKS",
+  "COUNTER_BOOKS", "ANALYSIS_BOOKS", "CASH_BOOKS", "FILES", "BOX_FILES",
+  "CLAMP_FILES", "RING_BINDERS", "BINDING_RINGS", "PAPER", "COMPUTER_PAPER",
+  "PRINTING_PAPER", "PHOTOCOPY_PAPER", "BOARDS", "WHITE_BOARDS", "NOTICE_BOARDS",
+  "CHALKBOARDS", "TAPES", "CELLO_TAPE", "MASKING_TAPE", "DUCT_TAPE", "BAGS",
+  "CLEAR_BAGS", "PLASTIC_BAGS", "CLIPS", "BINDER_CLIPS", "PAPER_CLIPS",
+  "PUSH_PINS", "DESK_ORGANIZERS", "STAPLERS", "PUNCHES", "SCISSORS", "RULERS",
+  "ART_SUPPLIES", "CANVAS_BOARDS", "PAINTS", "BRUSHES",
+  "HAND_TOOLS", "POWER_TOOLS", "MEASURING_TOOLS", "CUTTING_TOOLS", "FASTENERS",
+  "SCREWS", "NAILS", "BOLTS", "NUTS", "WASHERS", "PLUMBING", "PIPES",
+  "FITTINGS", "VALVES", "SEALANTS", "ELECTRICAL", "WIRES", "SWITCHES",
+  "SOCKETS", "BREAKERS", "PAINTING", "PAINTS_HW", "BRUSHES_HW", "ROLLERS",
+  "DROP_CLOTHS", "SAFETY", "HELMETS", "GLOVES", "GOGGLES", "BOOTS",
+  "BUILDING_MATERIALS", "CEMENT", "SAND", "AGGREGATES", "BRICKS", "OTHER",
+];
+
+export const formatCategory = (c: ItemCategory) =>
+  c.charAt(0) + c.slice(1).toLowerCase().replace(/_/g, " ");
