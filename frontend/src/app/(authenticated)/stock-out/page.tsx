@@ -22,7 +22,7 @@ import { useInventoryStore } from "@/stores/inventory-store";
 import { useAuthStore } from "@/stores/auth-store";
 import { usePageStoreSelection } from "@/stores/ui-store";
 import { Item, Transaction, Store, QuantityType } from "@/types";
-import { formatQuantities, mergeQuantityTypes } from "@/lib/qty-label";
+import { formatQuantitiesShort, mergeQuantityTypes } from "@/lib/qty-label";
 
 function formatCurrency(amount: number, currency: string): string {
   return new Intl.NumberFormat("en-UG", {
@@ -463,7 +463,7 @@ export default function StockOutPage() {
                               <span className="ml-2 text-muted-foreground">{item.itemType}</span>
                               {stock && (
                                 <span className="ml-2 text-xs text-muted-foreground">
-                                  (Stock: {formatQuantities(stock.quantities, rowQts)})
+                                  (Stock: {formatQuantitiesShort(stock.quantities, rowQts)})
                                 </span>
                               )}
                             </button>
@@ -608,7 +608,7 @@ export default function StockOutPage() {
                       <TableCell className="whitespace-normal break-words text-center text-sm">{getStoreName(sale.storeId, stores)}</TableCell>
                       <TableCell className="whitespace-normal break-words text-center text-sm">
                         {sale.items.map((item) =>
-                          formatQuantities(
+                          formatQuantitiesShort(
                             item.quantities,
                             // Sale-time label snapshot first (immune to later
                             // catalog/row drift); historical lines recorded

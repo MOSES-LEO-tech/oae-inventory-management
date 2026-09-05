@@ -42,6 +42,7 @@ import {
 } from "zustand/middleware";
 import { reviveFirestoreTimestamps } from "@/lib/timestamp-revive";
 import { mergeQuantityTypes } from "@/lib/qty-label";
+import { findCartonType, pcsPerCarton } from "@/lib/stock/conversion";
 
 // Merge every live quantity-type source for an item — catalog copy plus ALL
 // inventory-row copies (rows of the same item across stores can carry

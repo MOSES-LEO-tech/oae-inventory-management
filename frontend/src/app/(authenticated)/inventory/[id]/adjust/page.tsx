@@ -14,7 +14,7 @@ import { toUserMessage } from "@/lib/user-error";
 import { useInventoryStore } from "@/stores/inventory-store";
 import { useAuthStore } from "@/stores/auth-store";
 import { Store } from "@/types";
-import { formatQuantities, mergeQuantityTypes } from "@/lib/qty-label";
+import { formatQuantitiesShort, mergeQuantityTypes } from "@/lib/qty-label";
 
 function getStoreName(storeId: string, stores: Store[]): string {
   const store = stores.find((s) => s.id === storeId);
@@ -124,13 +124,13 @@ export default function AdjustStockPage() {
             <div>
               <p className="text-xs text-muted-foreground">Current Stock</p>
               <p className="text-sm font-bold">
-                {formatQuantities(quantities, quantityTypes) || "0"}
+                {formatQuantitiesShort(quantities, quantityTypes) || "0"}
               </p>
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Low Stock Thresholds</p>
               <p className="text-sm font-bold">
-                {formatQuantities(item.lowStockThresholds, quantityTypes) || "N/A"}
+                {formatQuantitiesShort(item.lowStockThresholds, quantityTypes) || "N/A"}
               </p>
             </div>
           </div>

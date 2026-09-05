@@ -300,6 +300,24 @@ export default function EditItemPage() {
                             />
                           </div>
                         )}
+                        {!qtyType.isDefault && (
+                          <div className="space-y-1">
+                            <Label htmlFor={`qty-conv-${index}`} className="text-xs">Pcs per {qtyType.label || "unit"} *</Label>
+                            <Input
+                              id={`qty-conv-${index}`}
+                              type="number"
+                              min={1}
+                              step={1}
+                              placeholder="e.g., 50"
+                              value={qtyType.conversionFactor && qtyType.conversionFactor > 1 ? qtyType.conversionFactor : ""}
+                              onChange={(e) => {
+                                const val = e.target.value === "" ? 1 : Math.max(1, Math.floor(Number(e.target.value)));
+                                updateQuantityType(index, "conversionFactor", val || 1);
+                              }}
+                              required
+                            />
+                          </div>
+                        )}
                         <div className="space-y-1">
                           <Label htmlFor={`qty-price-${index}`} className="text-xs">Sale Price *</Label>
                           <Input

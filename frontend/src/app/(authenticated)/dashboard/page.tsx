@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { formatQuantities, mergeQuantityTypes } from "@/lib/qty-label";
+import { formatQuantitiesShort, mergeQuantityTypes } from "@/lib/qty-label";
 import {
   Package,
   ArrowDownToLine,
@@ -380,10 +380,14 @@ function StaffDashboard() {
           <CardContent className="pt-0">
             <div className="space-y-1">
               {lowStockItems.slice(0, 5).map((row) => (
-                <div key={row.id} className="flex justify-between text-sm">
+                <Link
+                  key={row.id}
+                  href={`/reports/low-stock${row.storeId ? `?store=${row.storeId}` : ""}`}
+                  className="flex justify-between text-sm rounded-lg px-2 py-1 -mx-2 transition-colors hover:bg-accent"
+                >
                   <span>{row.itemName} ({row.itemType})</span>
                   <span className="font-medium">
-                    {formatQuantities(
+                    {formatQuantitiesShort(
                       row.quantities,
                       mergeQuantityTypes(
                         inventoryItems.find((c) => c.id === row.itemId)?.quantityTypes,
@@ -391,7 +395,7 @@ function StaffDashboard() {
                       )
                     )}
                   </span>
-                </div>
+                </Link>
               ))}
               {lowStockItems.length > 5 && (
                 <Link href="/reports/low-stock">

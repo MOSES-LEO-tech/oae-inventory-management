@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { useInventoryStore } from "@/stores/inventory-store";
 import { useAuthStore } from "@/stores/auth-store";
 import { QuantityType } from "@/types";
-import { getQuantityTypeLabel, mergeQuantityTypes } from "@/lib/qty-label";
+import { getQuantityTypeShort, mergeQuantityTypes } from "@/lib/qty-label";
 
 interface LowStockAlert {
   id: string;
@@ -43,16 +43,17 @@ export function NotificationBell() {
 
   const isEnabled = facilitySettings?.lowStockAlertEnabled ?? true;
 
-  // Record keys are quantity-type IDs — resolve each to its readable label
-  // against the merged catalog + row copies so raw ids never leak.
+  // Record keys are quantity-type IDs — resolve each to its short unit
+  // abbreviation against the merged catalog + row copies so raw ids never
+  // leak and the compact display stays scannable ("3 pcs / 2 ctn").
   const formatQty = (quantities: Record<string, number>, quantityTypes: QuantityType[]) =>
     Object.entries(quantities)
-      .map(([k, v]) => `${v} ${getQuantityTypeLabel(quantityTypes, k)}`)
+      .map(([k, v]) => `${v} ${getQuantityTypeShort(quantityTypes, k)}`)
       .join(" / ");
 
   const formatThresholds = (thresholds: Record<string, number>, quantityTypes: QuantityType[]) =>
     Object.entries(thresholds)
-      .map(([k, v]) => `${v} ${getQuantityTypeLabel(quantityTypes, k)}`)
+      .map(([k, v]) => `${v} ${getQuantityTypeShort(quantityTypes, k)}`)
       .join(" / ");
 
   // ── Alert derivation (reactive) ──────────────────────────────────────────
@@ -310,7 +311,7 @@ export function NotificationBell() {
                   }`}
                 >
                   <Link
-                    href={`/inventory/${alert.id}/edit${alert.storeId ? `?store=${alert.storeId}` : ""}`}
+                    href={`/reports/low-stock${alert.storeId ? `?store=${alert.storeId}` : ""}`}
                     className="flex-1 min-w-0 px-4 py-3 text-sm hover:bg-muted/30 transition-colors"
                   >
                     <div className="flex items-start gap-2">

@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { useInventoryStore } from "@/stores/inventory-store";
 import { usePageStoreSelection } from "@/stores/ui-store";
 import { useAuthStore } from "@/stores/auth-store";
+import { shortUnit } from "@/lib/qty-label";
 import { toast } from "sonner";
 import {
   resolveReportFacilityInfo,
@@ -41,6 +42,14 @@ export default function LowStockPage() {
     fetchInventory();
     fetchItems();
     fetchStores();
+  }, []);
+
+  // Deep-link support: the low-stock notification bell links here with
+  // ?store=<id> so the alert's store context carries into the report filter.
+  useEffect(() => {
+    const storeParam = new URLSearchParams(window.location.search).get("store");
+    if (storeParam) setSelectedStoreId(storeParam);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const lowStockItems = useMemo(() => {
@@ -172,8 +181,8 @@ export default function LowStockPage() {
                     const firstItem = lowStockItems[0];
                     if (firstItem?.quantityTypes?.length) {
                       return firstItem.quantityTypes.flatMap(qt => [
-                        <TableHead key={qt.id} className="text-center">Current {qt.label}</TableHead>,
-                        <TableHead key={`th-${qt.id}`} className="text-center">Threshold {qt.label}</TableHead>,
+                        <TableHead key={qt.id} className="text-center">Current {shortUnit(qt.label)}</TableHead>,
+                        <TableHead key={`th-${qt.id}`} className="text-center">Threshold {shortUnit(qt.label)}</TableHead>,
                       ]);
                     }
                     return [

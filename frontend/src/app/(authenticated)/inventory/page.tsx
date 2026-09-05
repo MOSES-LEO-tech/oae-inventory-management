@@ -35,6 +35,7 @@ import { toast } from "sonner";
 import { toUserMessage } from "@/lib/user-error";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useInventoryStore } from "@/stores/inventory-store";
+import { shortUnit } from "@/lib/qty-label";
 import { usePageStoreSelection } from "@/stores/ui-store";
 import { useAuthStore } from "@/stores/auth-store";
 import type { QuantityType, Item } from "@/types";
@@ -515,7 +516,7 @@ export default function InventoryPage() {
                               <div key={qt.id} className="text-sm">
                                 <span className="font-medium tabular-nums">{formatNumber(row.qtyByType[qt.id] ?? 0)}</span>
                                 {qt.label && (
-                                  <span className="ml-1 text-xs text-mid-gray">{pluralize(qt.label)}</span>
+                                  <span className="ml-1 text-xs text-mid-gray">{shortUnit(qt.label)}</span>
                                 )}
                               </div>
                             ))}
