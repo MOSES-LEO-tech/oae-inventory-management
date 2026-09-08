@@ -220,16 +220,14 @@ export default function LowStockPage() {
                         <TableCell className="text-center text-sm font-medium">{row.itemName}</TableCell>
                         <TableCell className="text-center text-sm text-muted-foreground">{row.itemType}</TableCell>
                         <TableCell className="hidden sm:table-cell text-center text-sm">{getStoreName(row.storeId)}</TableCell>
-                        {qtyTypes.map(qt => (
-                          <>
-                            <TableCell key={qt.id} className="text-center text-sm font-bold tabular-nums">
-                              {quantities[qt.id] ?? 0}
-                            </TableCell>
-                            <TableCell key={`th-${qt.id}`} className="text-center text-sm text-muted-foreground tabular-nums">
-                              {thresholds[qt.id] ?? 0}
-                            </TableCell>
-                          </>
-                        ))}
+                        {qtyTypes.flatMap(qt => [
+                          <TableCell key={qt.id} className="text-center text-sm font-bold tabular-nums">
+                            {quantities[qt.id] ?? 0}
+                          </TableCell>,
+                          <TableCell key={`th-${qt.id}`} className="text-center text-sm text-muted-foreground tabular-nums">
+                            {thresholds[qt.id] ?? 0}
+                          </TableCell>,
+                        ])}
                         <TableCell className="text-center">
                           <Badge variant="secondary" className={`text-xs ${
                             isCritical

@@ -340,8 +340,16 @@ export default function StockInPage() {
 
   // Get recent IN movements
   const recentStockIn = useMemo(() => {
+    // Dedupe by id: the shared movements slice can briefly carry the same doc
+    // twice (optimistic prepend racing a refetch; rows persisted before the
+    // store-level guard). Rendering both triggers React duplicate-key errors.
+    const seen = new Set<string>();
     return movements
-      .filter((m: StockMovement) => m.type === "IN")
+      .filter((m: StockMovement) => {
+        if (m.type !== "IN" || seen.has(m.id)) return false;
+        seen.add(m.id);
+        return true;
+      })
       .slice(0, 10)
       .map((m) => {
         const item = inventoryItems.find((i) => i.itemId === m.itemId || i.id === m.itemId);

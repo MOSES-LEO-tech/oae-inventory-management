@@ -77,13 +77,39 @@ function stripUndefined<T extends Record<string, unknown>>(data: T): Partial<T> 
   return Object.fromEntries(Object.entries(data).filter(([, v]) => v !== undefined)) as Partial<T>;
 }
 
-// Firestore write promises only settle after a server acknowledgement, so
-// Firestore's persistentLocalCache makes writes instant even offline.
-// Always await so the promise resolves when the write is durable in the
-// local cache; the onSnapshot listener (which drives the `items` slice)
-// will fire with the pending write already merged via DocumentOverlayCache.
+// Firestore write promises only settle after a server acknowledgement — the
+// SDK documents that batch.commit() "won't resolve while you're offline".
+// The persistent local cache makes the WRITE itself durable and visible the
+// moment it is enqueued (onSnapshot merges pending writes via the
+// DocumentOverlayCache), so offline callers must not block on the ack:
+// confirm buttons would spin for 30s+ waiting for a server that isn't there.
+// Online the promise resolves normally and nothing changes; offline we return
+// as soon as the write is queued and detach a rejection guard so a replay
+// failure can't surface as an unhandled promise rejection (listeners and the
+// reconnect replay remain the source of truth).
 async function commitWrite(write: Promise<unknown>): Promise<void> {
+  if (typeof navigator !== "undefined" && !navigator.onLine) {
+    write.catch(() => {
+      // Queued write failed to replay (e.g. permission change while offline).
+      // The onSnapshot listeners reflect whatever the server actually has, so
+      // the UI self-corrects on reconnect; swallow only the rejection itself.
+    });
+    return;
+  }
   await write;
+}
+
+// Prepend optimistic records (movements/sales) without duplicates. A doc id
+// can already be present in the slice when the optimistic prepend races a
+// refetch that landed first (page remount, another page's fetch, rehydration
+// from the persisted cache) — prepending again renders "two children with the
+// same key" warnings and double rows. Server truth has no duplicates
+// (verified via Firestore REST); this guard only keeps the local slice clean.
+// Existing rows keep their position; a new row goes to the front.
+function prependUnique<T extends { id: string }>(existing: T[], incoming: T[]): T[] {
+  const existingIds = new Set(existing.map((row) => row.id));
+  const fresh = incoming.filter((row) => !existingIds.has(row.id));
+  return fresh.length ? [...fresh, ...existing] : existing;
 }
 
 // Merge entered cost prices into a quantity-types array. Only overwrites a
@@ -799,7 +825,7 @@ export const useInventoryStore = create<InventoryState>()(
     // document — including pending writes merged via DocumentOverlayCache —
     // into the `items` slice automatically. No mirror update needed.
     set({
-      movements: [movement, ...get().movements],
+      movements: prependUnique(get().movements, [movement]),
     });
   },
 
@@ -977,7 +1003,7 @@ export const useInventoryStore = create<InventoryState>()(
       : get().inventoryItems;
     set({
       inventoryItems: catalogPatch,
-      movements: [movement, ...get().movements],
+      movements: prependUnique(get().movements, [movement]),
     });
   },
 
@@ -1197,8 +1223,8 @@ export const useInventoryStore = create<InventoryState>()(
     // documents — pending writes merged via DocumentOverlayCache — into the
     // `items` slice automatically. No quantities mirror is maintained.
     set({
-      sales: [transaction, ...get().sales],
-      movements: [...newMovements, ...get().movements],
+      sales: prependUnique(get().sales, [transaction]),
+      movements: prependUnique(get().movements, newMovements),
     });
   },
 
@@ -1358,7 +1384,7 @@ export const useInventoryStore = create<InventoryState>()(
             }
           : t
       ),
-      movements: [...newMovements, ...get().movements],
+      movements: prependUnique(get().movements, newMovements),
     });
   },
 
@@ -1523,7 +1549,7 @@ export const useInventoryStore = create<InventoryState>()(
             }
           : t
       ),
-      movements: [...newMovements, ...get().movements],
+      movements: prependUnique(get().movements, newMovements),
     });
   },
 
@@ -1617,7 +1643,7 @@ export const useInventoryStore = create<InventoryState>()(
       // docs — pending writes merged via DocumentOverlayCache —
       // automatically. No quantities mirror is maintained.
       set({
-        movements: [...newMovements, ...get().movements],
+        movements: prependUnique(get().movements, newMovements),
       });
     }
 
